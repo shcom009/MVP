@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>김토끼</title>
+  <title>김토끼 TEST</title>
 
   <style>
     body {
@@ -37,6 +37,9 @@
     }
 
     button {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
       border: 0;
       border-radius: 12px;
       padding: 14px 24px;
@@ -50,10 +53,11 @@
       opacity: 0.85;
     }
 
-    #message {
+    #message,
+    #fortune {
       min-height: 32px;
-      margin-top: 28px;
-      font-size: 24px;
+      margin-top: 22px;
+      font-size: 22px;
       font-weight: bold;
     }
   </style>
@@ -61,23 +65,32 @@
 
 <body>
   <div class="card">
-    <h1>안녕~김토끼 🐰</h1>
+    <h1>안녕~김토끼 TEST 🐰</h1>
 
     <p class="description">
-      ChatGPT와 GitHub Pages로 만든<br>
-      첫 번째 공개 웹페이지입니다.
+      test-design 브랜치에서만 보이는<br>
+      실험용 페이지입니다.
     </p>
 
     <button onclick="sayHello()">
       김토끼에게 인사하기
     </button>
 
+    <button onclick="showFortune()">
+      오늘의 행운 보기
+    </button>
+
     <div id="message"></div>
+    <div id="fortune"></div>
   </div>
 
   <script>
     function sayHello() {
       document.getElementById("message").innerText = "반가워요! 🐰";
+    }
+
+    function showFortune() {
+      document.getElementById("fortune").innerText = "오늘은 작은 행운이 찾아옵니다 🍀";
     }
   </script>
 </body>
