@@ -3,8 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <title>김토끼</title>
+
+  <style>
+    body {
+      text-align: center;
+      padding-top: 100px;
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      font-size: 40px;
+    }
+
+    button {
+      font-size: 20px;
+      padding: 12px 25px;
+      cursor: pointer;
+    }
+
+    #message {
+      font-size: 24px;
+      margin-top: 30px;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>안녕~김토끼</h1>
+
+  <h1>안녕~김토끼 🐰</h1>
+
+  <button onclick="sayHello()">
+    김토끼에게 인사하기
+  </button>
+
+  <div id="message"></div>
+
+  <script>
+    function sayHello() {
+      document.getElementById("message").innerText = "반가워요! 🐰";
+    }
+  </script>
+
 </body>
 </html>
