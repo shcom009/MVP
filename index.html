@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>김토끼 TEST</title>
+  <title>김토끼</title>
 
   <style>
     body {
@@ -54,7 +54,8 @@
     }
 
     #message,
-    #fortune {
+    #fortune,
+    #currentTime {
       min-height: 32px;
       margin-top: 22px;
       font-size: 22px;
@@ -65,11 +66,11 @@
 
 <body>
   <div class="card">
-    <h1>안녕~김토끼 TEST 🐰</h1>
+    <h1>안녕~김토끼 🐰</h1>
 
     <p class="description">
-      test-design 브랜치에서만 보이는<br>
-      실험용 페이지입니다.
+      ChatGPT와 GitHub로 기능을 추가하며<br>
+      배우는 공개 웹페이지입니다.
     </p>
 
     <button onclick="sayHello()">
@@ -80,8 +81,13 @@
       오늘의 행운 보기
     </button>
 
+    <button onclick="showCurrentTime()">
+      현재 시간 보기
+    </button>
+
     <div id="message"></div>
     <div id="fortune"></div>
+    <div id="currentTime"></div>
   </div>
 
   <script>
@@ -91,6 +97,20 @@
 
     function showFortune() {
       document.getElementById("fortune").innerText = "오늘은 작은 행운이 찾아옵니다 🍀";
+    }
+
+    function showCurrentTime() {
+      const now = new Date();
+      const formatted = new Intl.DateTimeFormat("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }).format(now);
+
+      document.getElementById("currentTime").innerText = `지금은 ${formatted} ⏰`;
     }
   </script>
 </body>
