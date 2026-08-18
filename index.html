@@ -3,9 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#7bbd7b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="김토끼">
   <title>김토끼</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="shortcut icon" href="favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
 
   <style>
     body {
@@ -113,6 +119,14 @@
       }).format(now);
 
       document.getElementById("currentTime").innerText = `지금은 ${formatted} ⏰`;
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch((error) => {
+          console.error("Service Worker registration failed:", error);
+        });
+      });
     }
   </script>
 </body>
