@@ -1,8 +1,8 @@
-const CACHE_NAME = "kimtokki-pwa-v1";
+const CACHE_NAME = "kimtokki-pwa-v2";
 const ASSETS = [
   "/MVP/",
   "/MVP/index.html",
-  "/MVP/favicon.svg",
+  "/MVP/app-icon.svg",
   "/MVP/manifest.webmanifest"
 ];
 
