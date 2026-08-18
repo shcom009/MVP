@@ -1,0 +1,18 @@
+{
+  "name": "김토끼",
+  "short_name": "김토끼",
+  "description": "ChatGPT와 GitHub로 기능을 추가하며 배우는 공개 웹앱",
+  "start_url": "/MVP/",
+  "scope": "/MVP/",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#7bbd7b",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
