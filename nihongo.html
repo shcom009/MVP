@@ -77,7 +77,7 @@
     const sheetBackdrop=document.getElementById("sheetBackdrop"),sheet=sheetBackdrop.querySelector(".sheet"),closeSheet=document.getElementById("closeSheet"),detailMeaning=document.getElementById("detailMeaning"),detailPron=document.getElementById("detailPron"),altMeanings=document.getElementById("altMeanings"),actionRow=document.getElementById("actionRow"),categoryTags=document.getElementById("categoryTags"),relationPanel=document.getElementById("relationPanel"),dialoguePanel=document.getElementById("dialoguePanel");
 
     const relationLabel={SIMILAR:"비슷",OPPOSITE:"반대",FORM:"활용",RELATED:"관련"};
-    let currentRows=[],activeCategoryId=null,currentRelationGroups={},currentDialogues=[],currentExpressionId=null;
+    let currentRows=[],activeCategoryId=null,currentRelationGroups={},currentDialogues=[],currentExpressionId=null,detailTrigger=null;
 
     function setStatus(message,isError=false){statusBox.hidden=!message;statusBox.textContent=message||"";statusBox.classList.toggle("error",isError)}
     function setLoading(on){loadingLine.hidden=!on;searchBtn.disabled=on;micBtn.disabled=on||!SpeechRecognitionCtor}
@@ -100,7 +100,7 @@
       try{const links=await apiGet(`expression_category?select=expression_id&category_id=eq.${activeCategoryId}&limit=200`);const ids=[...new Set(links.map(x=>x.expression_id))];if(!ids.length){renderResults([]);setStatus(`${statusPrefix}0개 결과`);return}
         const idList=ids.join(",");const [exprs,meanings]=await Promise.all([apiGet(`expression?select=id,display_pronunciation&id=in.(${idList})&status=eq.ACTIVE`),apiGet(`expression_meaning?select=expression_id,meaning_text,is_primary&expression_id=in.(${idList})&is_primary=eq.true`)]);const m=new Map(meanings.map(x=>[x.expression_id,x.meaning_text]));const rows=exprs.map(e=>({expression_id:e.id,meaning_text:m.get(e.id)||"",display_pronunciation:e.display_pronunciation,match_type:""})).slice(0,80);renderResults(rows);setStatus(`${statusPrefix}${rows.length}개 결과`)}catch(error){console.error(error);setStatus("카테고리를 불러오지 못했습니다.",true)}finally{setLoading(false)}}
 
-    async function openDetail(row){currentExpressionId=Number(row.expression_id);sheet.scrollTop=0;detailMeaning.textContent=row.meaning_text||"";detailPron.textContent=row.display_pronunciation||"";altMeanings.textContent="";actionRow.innerHTML="";actionRow.hidden=true;categoryTags.innerHTML="";categoryTags.hidden=true;relationPanel.innerHTML="";relationPanel.hidden=true;dialoguePanel.innerHTML="";dialoguePanel.hidden=true;currentRelationGroups={};currentDialogues=[];sheetBackdrop.hidden=false;document.body.style.overflow="hidden";
+    async function openDetail(row){if(sheetBackdrop.hidden)detailTrigger=document.activeElement;currentExpressionId=Number(row.expression_id);sheet.scrollTop=0;detailMeaning.textContent=row.meaning_text||"";detailPron.textContent=row.display_pronunciation||"";altMeanings.textContent="";actionRow.innerHTML="";actionRow.hidden=true;categoryTags.innerHTML="";categoryTags.hidden=true;relationPanel.innerHTML="";relationPanel.hidden=true;dialoguePanel.innerHTML="";dialoguePanel.hidden=true;currentRelationGroups={};currentDialogues=[];sheetBackdrop.hidden=false;document.body.style.overflow="hidden";closeSheet.focus({preventScroll:true});
       try{const id=currentExpressionId;const [meanings,rels,cats,dias]=await Promise.all([
           apiGet(`expression_meaning?select=meaning_text,meaning_order,is_primary&expression_id=eq.${id}&order=meaning_order.asc`),
           apiGet(`expression_relation?select=from_expression_id,to_expression_id,relation_type,relation_subtype&or=(from_expression_id.eq.${id},to_expression_id.eq.${id})`),
@@ -131,7 +131,7 @@
 
     function showDialogues(){relationPanel.hidden=true;dialoguePanel.innerHTML=currentDialogues.map((d,di)=>`<div class="dialogue-card"><div class="dialogue-head"><div class="dialogue-title">${escapeHtml(d.title)}</div>${d.situation&&d.situation!=="대화"&&d.situation!==d.title?`<div class="dialogue-kind">${escapeHtml(d.situation)}</div>`:""}</div>${d.total>d.lines.length?`<div class="dialogue-window-note">전체 ${d.total}개 표현 중 현재 표현 주변만 표시</div>`:""}${d.lines.map((l,li)=>{const clickable=Boolean(l.expression_id&&!l.current),tag=clickable?"button":"div";return `<${tag} class="dialogue-line ${clickable?"clickable":""} ${l.current?"current":""}"${clickable?' type="button"':""} data-dialogue-index="${di}" data-line-index="${li}"><span class="d-meaning">${escapeHtml(l.korean_text||"")}</span><span class="d-mark">${l.current?"현재":""}</span><span class="d-pron">${escapeHtml(l.display_pronunciation||"")}</span></${tag}>`}).join("")}</div>`).join("");dialoguePanel.hidden=!currentDialogues.length;if(currentDialogues.length)dialoguePanel.scrollIntoView({behavior:"smooth",block:"nearest"})}
 
-    function closeDetail(){sheetBackdrop.hidden=true;document.body.style.overflow="";relationPanel.hidden=true;dialoguePanel.hidden=true}
+    function closeDetail(){sheetBackdrop.hidden=true;document.body.style.overflow="";relationPanel.hidden=true;dialoguePanel.hidden=true;if(detailTrigger?.isConnected)detailTrigger.focus({preventScroll:true});detailTrigger=null}
 
     form.addEventListener("submit",e=>{e.preventDefault();searchExpressions(input.value)});
     resultsBox.addEventListener("click",e=>{const el=e.target.closest(".result");if(el)openDetail(currentRows[Number(el.dataset.index)])});
