@@ -1,25 +1,20 @@
-const CACHE_NAME = "kimtokki-pwa-v2";
+const CACHE_NAME = "kimtokki-nihongo-v3";
 const ASSETS = [
   "/MVP/",
   "/MVP/index.html",
+  "/MVP/nihongo.html",
   "/MVP/app-icon.svg",
   "/MVP/manifest.webmanifest"
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      )
-    )
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
   );
   self.clients.claim();
 });
@@ -34,6 +29,8 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/MVP/")))
+      .catch(() =>
+        caches.match(event.request).then((cached) => cached || caches.match("/MVP/nihongo.html") || caches.match("/MVP/"))
+      )
   );
 });
