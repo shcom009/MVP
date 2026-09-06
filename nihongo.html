@@ -29,7 +29,6 @@
     .relation-item{display:grid;grid-template-columns:1fr auto;gap:5px 12px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer}.relation-item .r-meaning{font-weight:700}.relation-item .r-pron{grid-column:1;color:#343a40}.relation-item .r-go{color:var(--muted);font-size:12px}.relation-item .r-meta{grid-column:2;color:var(--muted);font-size:11px;white-space:nowrap;align-self:end}
     .dialogue-card{padding:14px 0;border-bottom:1px solid var(--line)}.dialogue-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 2px 8px}.dialogue-title{font-size:14px;font-weight:800;line-height:1.4}.dialogue-kind{font-size:11px;color:var(--muted);white-space:nowrap}.dialogue-window-note{padding:0 2px 8px;font-size:11px;color:var(--muted)}
     .dialogue-line{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 2px;border-top:1px solid #f0f1ee}.dialogue-line.clickable{cursor:pointer}.dialogue-line.clickable:hover{background:var(--soft2)}.dialogue-line .d-meaning{font-size:14px;font-weight:700;line-height:1.45}.dialogue-line .d-pron{grid-column:1/-1;font-size:14px;line-height:1.5}.dialogue-line .d-mark{font-size:10px;color:var(--muted)}.dialogue-line.current{background:#f8f8f5}
-    .detail-note{padding:14px 2px;color:var(--muted);font-size:12px;line-height:1.55}
     @media(min-width:761px){.sheet-backdrop{align-items:center;padding:24px}.sheet{border-radius:24px;max-height:min(80vh,760px)}.grab{display:none}.sheet-top{padding-top:2px}}
     @media(max-width:430px){.app{padding-left:14px;padding-right:14px}.brand strong{font-size:21px}.brand span{display:none}.search-row{grid-template-columns:1fr 44px 64px}.result{padding-top:16px;padding-bottom:15px}.detail-meaning{font-size:22px}.detail-pron{font-size:19px}}
   </style>
@@ -65,7 +64,6 @@
       <div id="categoryTags" class="category-tags" hidden></div>
       <div id="relationPanel" class="relation-panel" hidden></div>
       <div id="dialoguePanel" class="dialogue-panel" hidden></div>
-      <div id="detailNote" class="detail-note">대화는 원본 메모의 표현 순서를 보존한 학습 문맥입니다. 원본·Candidate·개인 메모 자체는 이 화면에서 조회하지 않습니다.</div>
     </section>
   </div>
 
@@ -116,7 +114,7 @@
       }catch(error){console.warn("detail extras skipped",error)}}
 
     async function prepareRelations(currentId,rels){const groups={};for(const r of rels){const type=r.relation_type||"RELATED";(groups[type]??=[]).push({...r,targetId:r.from_expression_id===currentId?r.to_expression_id:r.from_expression_id})}const allIds=[...new Set(rels.map(r=>r.from_expression_id===currentId?r.to_expression_id:r.from_expression_id))];if(!allIds.length)return;const idList=allIds.join(",");const [exprs,meanings]=await Promise.all([apiGet(`expression?select=id,display_pronunciation&id=in.(${idList})&status=eq.ACTIVE`),apiGet(`expression_meaning?select=expression_id,meaning_text,is_primary&expression_id=in.(${idList})&is_primary=eq.true`)]);const eMap=new Map(exprs.map(x=>[x.id,x.display_pronunciation])),mMap=new Map(meanings.map(x=>[x.expression_id,x.meaning_text]));const usable={};for(const [type,list] of Object.entries(groups)){usable[type]=list.map(x=>({expression_id:x.targetId,meaning_text:mMap.get(x.targetId)||"",display_pronunciation:eMap.get(x.targetId)||"",relation_subtype:x.relation_subtype||"",form_label:type==="FORM"?formSubtypeLabel(x.relation_subtype):""})).filter(x=>x.display_pronunciation)}const types=Object.keys(usable).filter(t=>usable[t].length);if(!types.length)return;currentRelationGroups=usable;
-      actionRow.insertAdjacentHTML("beforeend",types.map(t=>`<button class="action-btn" type="button" data-relation="${escapeHtml(t)}"><strong>${escapeHtml(relationLabel[t]||t)}</strong> ${usable[t].length}</button>`).join(""));actionRow.hidden=false;
+      actionRow.insertAdjacentHTML("beforeend",types.map(t=>`<button class="action-btn" type="button" data-relation="${escapeHtml(t)}"><strong>${escapeHtml(relationLabel[t]||t)}</strong> ${usable[t].length}</button>`).join("");actionRow.hidden=false;
     }
 
     async function prepareDialogues(currentId,dias){const anchorLineIds=[...new Set(dias.map(x=>x.dialogue_line_id))];if(!anchorLineIds.length)return;const anchorLines=await apiGet(`dialogue_line?select=id,dialogue_id,line_order&id=in.(${anchorLineIds.join(",")})`);const dialogueIds=[...new Set(anchorLines.map(x=>x.dialogue_id))].slice(0,5);if(!dialogueIds.length)return;const dids=dialogueIds.join(",");const [dialogs,allLines]=await Promise.all([
