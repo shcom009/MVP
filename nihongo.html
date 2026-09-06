@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f7f5" />
+  <title>김토끼니혼고</title>
+  <style>
+    :root {
+      --bg: #f7f7f5;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #737b84;
+      --line: #e7e8e5;
+      --accent: #22272e;
+      --soft: #f0f1ee;
+      --error: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, "Noto Sans KR", sans-serif;
+    }
+    .app {
+      width: min(100%, 720px);
+      margin: 0 auto;
+      padding: max(22px, env(safe-area-inset-top)) 18px 40px;
+    }
+    .brand {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 2px 18px;
+    }
+    .brand strong {
+      font-size: 22px;
+      letter-spacing: -0.6px;
+    }
+    .brand span {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr 46px 70px;
+      gap: 8px;
+    }
+    .search-row input,
+    .search-row button {
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font: inherit;
+    }
+    .search-row input {
+      width: 100%;
+      padding: 0 15px;
+      font-size: 16px;
+      outline: none;
+    }
+    .search-row input:focus {
+      border-color: #aeb4ba;
+      box-shadow: 0 0 0 3px rgba(31,35,40,.06);
+    }
+    .search-row button {
+      cursor: pointer;
+      font-weight: 700;
+    }
+    #micBtn {
+      font-size: 18px;
+      color: var(--text);
+    }
+    #searchBtn {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    button:disabled {
+      opacity: .45;
+      cursor: default;
+    }
+    .hint {
+      min-height: 24px;
+      padding: 10px 3px 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .status {
+      padding: 14px 3px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .status.error { color: var(--error); }
+    .results {
+      margin-top: 2px;
+      border-top: 1px solid var(--line);
+    }
+    .result {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px 14px;
+      padding: 17px 3px 16px;
+      border-bottom: 1px solid var(--line);
+      cursor: default;
+    }
+    .meaning {
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.4;
+      letter-spacing: -0.2px;
+    }
+    .pron {
+      grid-column: 1 / -1;
+      font-size: 16px;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+    .match {
+      align-self: start;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .1px;
+    }
+    .empty {
+      padding: 28px 3px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.7;
+    }
+    @media (max-width: 430px) {
+      .app { padding-left: 14px; padding-right: 14px; }
+      .brand strong { font-size: 21px; }
+      .brand span { display: none; }
+      .search-row { grid-template-columns: 1fr 44px 64px; }
+      .result { padding-top: 16px; padding-bottom: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="brand">
+      <strong>김토끼니혼고</strong>
+      <span>들어올 수는 있어도 나갈 수는 없다</span>
+    </div>
+
+    <form id="searchForm" class="search-row" autocomplete="off">
+      <input id="searchInput" type="search" inputmode="search" placeholder="뜻 또는 일본어 발음을 한글로 검색" aria-label="일본어 표현 검색" />
+      <button id="micBtn" type="button" title="음성 입력" aria-label="음성 입력">🎙</button>
+      <button id="searchBtn" type="submit">검색</button>
+    </form>
+
+    <div id="hint" class="hint">예: 날씨 · 텐키 · 헷또쎗또</div>
+    <div id="status" class="status" hidden></div>
+    <section id="results" class="results" aria-live="polite"></section>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://pwwrvwtgrtegmrjulxji.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_mWZUenksN6A1A-sgyC_dqQ_PaNzQZf6";
+
+    const form = document.getElementById("searchForm");
+    const input = document.getElementById("searchInput");
+    const micBtn = document.getElementById("micBtn");
+    const searchBtn = document.getElementById("searchBtn");
+    const statusBox = document.getElementById("status");
+    const resultsBox = document.getElementById("results");
+
+    const matchLabel = {
+      MEANING_EXACT: "뜻 정확",
+      PRON_EXACT: "발음 정확",
+      MEANING_PARTIAL: "뜻 포함",
+      PRON_PARTIAL: "발음 포함",
+      FUZZY: "비슷한 검색"
+    };
+
+    function setStatus(message, isError = false) {
+      statusBox.hidden = !message;
+      statusBox.textContent = message || "";
+      statusBox.classList.toggle("error", isError);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderResults(rows) {
+      if (!rows.length) {
+        resultsBox.innerHTML = '<div class="empty">찾은 표현이 없습니다.<br>발음이나 뜻을 조금 다르게 입력해 보세요.</div>';
+        return;
+      }
+
+      resultsBox.innerHTML = rows.map((row) => `
+        <article class="result" data-expression-id="${escapeHtml(row.expression_id)}">
+          <div class="meaning">${escapeHtml(row.meaning_text)}</div>
+          <div class="match">${escapeHtml(matchLabel[row.match_type] || row.match_type || "")}</div>
+          <div class="pron">${escapeHtml(row.display_pronunciation)}</div>
+        </article>
+      `).join("");
+    }
+
+    async function searchExpressions(query) {
+      const q = query.trim();
+      if (!q) {
+        resultsBox.innerHTML = "";
+        setStatus("");
+        input.focus();
+        return;
+      }
+
+      searchBtn.disabled = true;
+      micBtn.disabled = true;
+      setStatus("검색 중…");
+      resultsBox.innerHTML = "";
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_expressions`, {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_PUBLISHABLE_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ p_query: q, p_limit: 20 })
+        });
+
+        if (!response.ok) {
+          const detail = await response.text();
+          throw new Error(`HTTP ${response.status}: ${detail}`);
+        }
+
+        const rows = await response.json();
+        renderResults(rows);
+        setStatus(`${rows.length}개 결과`);
+      } catch (error) {
+        console.error(error);
+        setStatus("검색 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.", true);
+      } finally {
+        searchBtn.disabled = false;
+        micBtn.disabled = !SpeechRecognitionCtor;
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      searchExpressions(input.value);
+    });
+
+    const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      micBtn.disabled = true;
+      micBtn.title = "이 브라우저에서는 음성 입력을 지원하지 않습니다";
+    } else {
+      const recognition = new SpeechRecognitionCtor();
+      recognition.lang = "ko-KR";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      micBtn.addEventListener("click", () => {
+        try {
+          recognition.start();
+          setStatus("말씀해 주세요…");
+        } catch (_) {}
+      });
+
+      recognition.addEventListener("result", (event) => {
+        const text = event.results?.[0]?.[0]?.transcript || "";
+        input.value = text;
+        searchExpressions(text);
+      });
+
+      recognition.addEventListener("error", () => {
+        setStatus("음성 입력을 사용할 수 없습니다. 텍스트로 검색해 주세요.", true);
+      });
+    }
+
+    input.focus();
+  </script>
+</body>
+</html>
