@@ -1,4 +1,4 @@
-const CACHE_NAME = "kimtokki-nihongo-v3";
+const CACHE_NAME = "kimtokki-nihongo-v4";
 const ASSETS = [
   "/MVP/",
   "/MVP/index.html",
@@ -14,23 +14,33 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("kimtokki-nihongo-") && key !== CACHE_NAME).map((key) => caches.delete(key))))
   );
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  const request = event.request;
+  if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || !ASSETS.includes(url.pathname)) return;
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      })
-      .catch(() =>
-        caches.match(event.request).then((cached) => cached || caches.match("/MVP/nihongo.html") || caches.match("/MVP/"))
-      )
-  );
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    try {
+      const response = await fetch(request);
+      if (response.ok && response.type === "basic") {
+        event.waitUntil(cache.put(request, response.clone()).catch(() => {}));
+      }
+      return response;
+    } catch (error) {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      if (request.mode === "navigate") {
+        const shell = await cache.match("/MVP/nihongo.html");
+        if (shell) return shell;
+      }
+      throw error;
+    }
+  })());
 });
