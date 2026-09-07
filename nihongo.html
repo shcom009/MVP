@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f7f7f5" />
   <title>김토끼니혼고</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="./app-icon.svg" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="김토끼니혼고" />
   <style>
     :root{
       --bg:#f7f7f5;--card:#fff;--text:#1f2328;--muted:#737b84;--line:#e7e8e5;
@@ -154,6 +159,7 @@
 
     const SpeechRecognitionCtor=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SpeechRecognitionCtor){micBtn.disabled=true;micBtn.title="이 브라우저에서는 음성 입력을 지원하지 않습니다"}else{const recognition=new SpeechRecognitionCtor();recognition.lang="ko-KR";recognition.interimResults=false;recognition.maxAlternatives=1;micBtn.addEventListener("click",()=>{try{recognition.start();setStatus("말씀해 주세요…")}catch(_){}});recognition.addEventListener("result",e=>{const text=e.results?.[0]?.[0]?.transcript||"";input.value=text;searchExpressions(text)});recognition.addEventListener("error",()=>setStatus("음성 입력을 사용할 수 없습니다. 텍스트로 검색해 주세요.",true))}
 
+    if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js").catch(error=>console.warn("PWA registration failed",error))}
     loadCategories();input.focus();
   </script>
 </body>
