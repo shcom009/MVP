@@ -1,4 +1,4 @@
-const CACHE_NAME = "kimtokki-nihongo-v5";
+const CACHE_NAME = "kimtokki-nihongo-v6";
 const ASSETS = [
   "/MVP/",
   "/MVP/index.html",
