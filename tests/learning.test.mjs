@@ -23,6 +23,10 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /data-home-action="review"/);
   assert.match(html, /data-home-action="favorite"/);
   assert.doesNotMatch(html, /data-home-action="(?:search|category|story)"/);
+  assert.doesNotMatch(html, /id="hint"/);
+  assert.match(html, /class="quick-search"/);
+  assert.match(html, /class="home-learning-rabbit" src="\.\/mockup-detail-rabbit\.png"/);
+  for (const word of ['감사합니다', '계산해주세요', '화장실', '도와주세요']) assert.match(html, new RegExp(`data-example="${word}"`));
   assert.match(html, /id="categoryMoreBtn"[^>]*aria-controls="categoryStrip"/);
   assert.match(html, /categoryStrip\.classList\.toggle\("expanded"\)/);
   assert.match(html, /id="detailReviewBtn"/);
@@ -32,7 +36,7 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
 
 const declarations = [
   'compactRow', 'readStoredRows', 'writeStoredRows', 'escapeHtml',
-  'isReviewed', 'isFavorite', 'updateLearningCounts',
+  'isReviewed', 'isFavorite', 'renderHomeLearning', 'updateLearningCounts',
   'setFavoriteButton', 'toggleFavorite', 'toggleReview',
   'shuffleRows', 'renderLearningList', 'startReview',
   'renderReviewCard', 'rateReview'
@@ -50,8 +54,9 @@ const sunny = { expression_id: 2, meaning_text: '맑음', display_pronunciation:
 function setup({ review = [], favorite = [] } = {}) {
   const saved = new Map();
   const homeCounts = Object.fromEntries(['homeRecentCount', 'homeReviewCount', 'homeFavoriteCount'].map(id => [id, { textContent: '' }]));
+  const homeRows = Object.fromEntries(['homeRecentRows', 'homeReviewRows', 'homeFavoriteRows'].map(id => [id, { innerHTML: '' }]));
   const context = vm.createContext({
-    document: { getElementById: id => homeCounts[id] ?? null },
+    document: { getElementById: id => homeCounts[id] ?? homeRows[id] ?? null },
     localStorage: {
       getItem: key => saved.get(key) ?? null,
       setItem: (key, value) => saved.set(key, value),
@@ -73,16 +78,20 @@ function setup({ review = [], favorite = [] } = {}) {
     paintResults() {}, setFavoriteButton() {}, setReviewButton() {}
   });
   vm.runInContext(`${declarations}\n${backupDeclarations}`, context);
-  return { context, saved, homeCounts };
+  return { context, saved, homeCounts, homeRows };
 }
 
 test('첫 화면의 학습 건수가 기존 학습 목록과 함께 갱신된다', () => {
-  const { context, homeCounts } = setup({ review: [weather], favorite: [sunny] });
+  const { context, homeCounts, homeRows } = setup({ review: [weather], favorite: [sunny] });
   context.recentRows = [weather, sunny];
   context.updateLearningCounts();
   assert.deepEqual(Object.values(homeCounts).map(badge => badge.textContent), ['2', '1', '1']);
+  assert.match(homeRows.homeRecentRows.innerHTML, /날씨/);
+  assert.match(homeRows.homeReviewRows.innerHTML, /날씨/);
+  assert.match(homeRows.homeFavoriteRows.innerHTML, /맑음/);
   context.toggleReview(weather);
   assert.equal(homeCounts.homeReviewCount.textContent, '0');
+  assert.match(homeRows.homeReviewRows.innerHTML, /체크한 표현이 없습니다/);
 });
 
 test('기억함은 복습 목록에서만 제거하고 즐겨찾기는 남긴다', () => {
