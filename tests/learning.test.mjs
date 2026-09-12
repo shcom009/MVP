@@ -25,8 +25,13 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.doesNotMatch(html, /data-home-action="(?:search|category|story)"/);
   assert.doesNotMatch(html, /id="hint"/);
   assert.match(html, /class="quick-search"/);
-  assert.match(html, /class="home-learning-rabbit" src="\.\/mockup-detail-rabbit\.png"/);
-  for (const word of ['감사합니다', '계산해주세요', '화장실', '도와주세요']) assert.match(html, new RegExp(`data-example="${word}"`));
+  assert.match(html, /class="category-layout"/);
+  assert.match(html, /class="category-rabbit" src="\.\/mockup-detail-rabbit\.png"/);
+  assert.doesNotMatch(html, /class="home-learning-rabbit"/);
+  assert.match(html, /font-family:"Jua"/);
+  assert.match(html, /font-family:"Gaegu"/);
+  for (const word of ['스미마셍', '이쿠', '니루', '텐키하레', '타베테']) assert.match(html, new RegExp(`data-example="${word}"`));
+  assert.doesNotMatch(html, /data-example="감사합니다"/);
   assert.match(html, /id="categoryMoreBtn"[^>]*aria-controls="categoryStrip"/);
   assert.match(html, /categoryStrip\.classList\.toggle\("expanded"\)/);
   assert.match(html, /id="detailReviewBtn"/);
@@ -89,9 +94,18 @@ test('첫 화면의 학습 건수가 기존 학습 목록과 함께 갱신된다
   assert.match(homeRows.homeRecentRows.innerHTML, /날씨/);
   assert.match(homeRows.homeReviewRows.innerHTML, /날씨/);
   assert.match(homeRows.homeFavoriteRows.innerHTML, /맑음/);
+  assert.doesNotMatch(homeRows.homeRecentRows.innerHTML, /텐키|하레/);
   context.toggleReview(weather);
   assert.equal(homeCounts.homeReviewCount.textContent, '0');
   assert.match(homeRows.homeReviewRows.innerHTML, /체크한 표현이 없습니다/);
+});
+
+test('메인 미리보기는 뜻만 중복 없이 표시하면서 실제 표현 위치로 연결한다', () => {
+  const { context, homeRows } = setup();
+  context.recentRows = [weather, { ...weather, expression_id: 3, display_pronunciation: '오텐키' }, sunny];
+  context.renderHomeLearning();
+  assert.equal((homeRows.homeRecentRows.innerHTML.match(/날씨 상세 보기/g) ?? []).length, 1);
+  assert.match(homeRows.homeRecentRows.innerHTML, /data-home-row="2"[^>]*>맑음<\/button>/);
 });
 
 test('기억함은 복습 목록에서만 제거하고 즐겨찾기는 남긴다', () => {
