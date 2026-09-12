@@ -249,6 +249,11 @@ test('학습 목록의 상세를 닫으면 원래 목록과 스크롤 위치로 
   assert.match(script, /function closeDetail\(\).*restoreLearningAfterDetail\(\)/);
 });
 
+test('복습 발음을 공개하기 전 평가 버튼은 화면에서 숨긴다', () => {
+  assert.match(html, /<div class="review-actions" hidden>/);
+  assert.match(html, /\.review-actions\[hidden\]\{display:none\}/);
+});
+
 test('백업에는 복습·즐겨찾기만 들어가고 최근 본 표현은 제외된다', () => {
   const { context } = setup({ review: [weather], favorite: [sunny] });
   context.recentRows = [weather];
