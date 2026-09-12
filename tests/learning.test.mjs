@@ -26,8 +26,13 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.doesNotMatch(html, /id="hint"/);
   assert.match(html, /class="quick-search"/);
   assert.match(html, /class="category-layout"/);
-  assert.match(html, /id="categoryArt" class="category-rabbit" src="\.\/category-rabbit-centered-384\.png"/);
-  assert.ok(statSync(new URL('../category-rabbit-centered-384.png', import.meta.url)).size > 100000, '손과 포크가 잘리지 않은 토끼 이미지');
+  assert.match(html, /id="categoryArt" class="category-rabbit" src="\.\/category-rabbit-upper-v2\.png"/);
+  assert.ok(statSync(new URL('../category-rabbit-upper-v2.png', import.meta.url)).size > 100000, '상체와 음식이 크게 보이는 토끼 이미지');
+  assert.ok(statSync(new URL('../category-rabbit-bowl-v2.png', import.meta.url)).size > 100000, '식사 카테고리의 토끼 이미지');
+  for(const name of ['recent','review','favorite']) {
+    assert.match(html, new RegExp(`src="\\./learning-${name}-rabbit\\.png"`));
+    assert.ok(statSync(new URL(`../learning-${name}-rabbit.png`, import.meta.url)).size > 20000);
+  }
   assert.doesNotMatch(html, /class="home-learning-rabbit"/);
   assert.match(html, /font-family:"Jua"/);
   assert.match(html, /font-family:"Gaegu"/);
@@ -38,6 +43,16 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /id="detailReviewBtn"/);
   assert.match(html, /id="detailFavoriteBtn"/);
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
+});
+
+test('가로 3개 학습 영역과 카테고리 접기·펼치기가 기존 연결을 유지한다', () => {
+  assert.match(html, /\.home-learning-overview\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(script, /function renderHomeLearning\(\)[^\n]*\.slice\(0,3\)/);
+  assert.match(html, /id="categoryToggleBtn"[^>]*aria-expanded="true"[^>]*aria-controls="categoryLayout"/);
+  assert.match(html, /id="categoryLayout" class="category-layout"/);
+  assert.match(script, /categoryToggleBtn\.addEventListener\("click"/);
+  assert.match(script, /categoryLayout\.hidden=!categoryLayout\.hidden/);
+  assert.match(script, /if\(name==="식사·식사시간"\)\{categoryArt\.src="\.\/category-rabbit-bowl-v2\.png"/);
 });
 
 test('35개 카테고리에 서로 다른 그림과 배경이 적용되고 기본 화면은 토끼를 표시한다', () => {
