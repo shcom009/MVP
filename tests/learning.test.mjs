@@ -221,6 +221,34 @@ test('기기 뒤로가기는 Story 본문→목록→닫기 순서로 이동하�
   assert.match(script, /storyBackBtn\.addEventListener\("click",requestStoryList\)/);
 });
 
+test('학습 목록의 상세를 닫으면 원래 목록과 스크롤 위치로 돌아온다', () => {
+  const names = ['openLearningDetail', 'restoreLearningAfterDetail'];
+  const source = names.map(name => {
+    const line = script.split('\n').find(value => value.trimStart().startsWith(`function ${name}(`));
+    assert.ok(line, `${name} exists`);
+    return line;
+  }).join('\n');
+  for (const mode of ['recent', 'review', 'favorite']) {
+    const learningSheet = { scrollTop: 270 };
+    const calls = [];
+    const context = vm.createContext({
+      learningMode: mode, learningSheet,
+      closeLearning(restoreFocus) { calls.push(['close', restoreFocus]); },
+      menuBtn: { focus() {} },
+      openDetail(row) { calls.push(['detail', row.expression_id]); },
+      openLearning(restored) { calls.push(['list', restored]); learningSheet.scrollTop = 0; }
+    });
+    vm.runInContext(`let detailReturnLearningMode=null,detailReturnLearningScrollTop=0;\n${source}`, context);
+    context.openLearningDetail({ expression_id: 42 });
+    assert.equal(context.restoreLearningAfterDetail(), true);
+    assert.equal(learningSheet.scrollTop, 270);
+    assert.equal(context.restoreLearningAfterDetail(), false);
+    assert.deepEqual(calls, [['close', false], ['detail', 42], ['list', mode]]);
+  }
+  assert.match(script, /if\(row\)openLearningDetail\(row\)/);
+  assert.match(script, /function closeDetail\(\).*restoreLearningAfterDetail\(\)/);
+});
+
 test('백업에는 복습·즐겨찾기만 들어가고 최근 본 표현은 제외된다', () => {
   const { context } = setup({ review: [weather], favorite: [sunny] });
   context.recentRows = [weather];
