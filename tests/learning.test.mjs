@@ -57,6 +57,21 @@ test('가로 3개 학습 영역과 카테고리 접기·펼치기가 기존 연�
   assert.match(html, /\.home-learning-heading img\{width:80px;height:80px/);
 });
 
+test('상단 로고와 문구를 누르면 진행 중 검색을 무효화하고 메인 화면으로 돌아간다', () => {
+  assert.match(html, /<button id="homeBtn" class="brand-title" type="button" aria-label="김토끼니혼고 메인화면으로 이동">/);
+  assert.match(script, /homeBtn\.addEventListener\("click",goHome\)/);
+  const source=script.split('\n').find(line=>line.trimStart().startsWith('function goHome('));
+  const context={listRequestId:7,input:{value:'카에루'},activeCategoryId:2,currentKashiMatch:[1],currentRows:[1],currentVisibleCount:1,listExtras:new Map([[1,{}]]),resultsBox:{innerHTML:'search results'},window:{scrollTo(options){this.options=options}},matchMedia(){return {matches:false}},dismissQuickPopover(){},dismissRelationPopover(){},markCategory(){},updateCategoryArt(){},setStatus(){},setLoading(){}};
+  vm.runInNewContext(`${source};this.goHome=goHome`,context);
+  context.goHome();
+  assert.equal(context.listRequestId,8);
+  assert.equal(context.input.value,'');
+  assert.equal(context.activeCategoryId,null);
+  assert.equal(context.resultsBox.innerHTML,'');
+  assert.equal(context.listExtras.size,0);
+  assert.equal(context.window.options.top,0);
+});
+
 test('35개 카테고리에 각각의 토끼 그림이 연결되고 기본 화면도 토끼를 표시한다', () => {
   const sheets = [...script.matchAll(/const categoryScenes[AB]=\[([\s\S]*?)\];/g)];
   const names = sheets.flatMap((match) => [...match[1].matchAll(/"([^"]+)"/g)].map((item) => item[1]));
