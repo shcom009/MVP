@@ -172,15 +172,15 @@ test('Story를 읽고 돌아오면 목록 위치를 복원하고 새 목록에�
 });
 
 test('기기 뒤로가기는 Story 본문→목록→닫기 순서로 이동하고 닫기는 기록을 남기지 않는다', async () => {
-  const names = ['showStoryList', 'showStory', 'closeStoryBrowser', 'requestStoryList', 'requestCloseStory', 'handleStoryPopState'];
+  const names = ['showStoryList', 'showStory', 'openStoryBrowser', 'closeStoryBrowser', 'requestStoryList', 'requestCloseStory', 'handleStoryPopState'];
   const source = names.map(name => {
     const prefix = name === 'showStory' ? 'async function ' : 'function ';
     const line = script.split('\n').find(value => value.trimStart().startsWith(`${prefix}${name}(`));
     assert.ok(line, `${name} exists`);
     return line;
   }).join('\n');
-  const states = [{}, { kimtokkiStory: true }];
-  let index = 1;
+  const states = [{ kimtokkiStory: 'stale-from-reload' }];
+  let index = 0;
   let context;
   const history = {
     state: states[index],
@@ -193,15 +193,18 @@ test('기기 뒤로가기는 Story 본문→목록→닫기 순서로 이동하�
     this._hidden = value;
     if (value) storySheet.scrollTop = 0;
   } };
-  const storyBackdrop = { hidden: false };
+  const storyBackdrop = { hidden: true };
   context = vm.createContext({
     history, storyBackdrop, storySheet, storyList,
     storyReader: { hidden: true, textContent: '' }, storyBackBtn: { hidden: true, focus() {} },
     storyHeading: { textContent: '' }, storyTabs: { hidden: false }, storyCloseBtn: { focus() {} },
-    storyLoaded: true, paintStories() {}, app: { inert: true }, document: { body: { style: {} } },
+    storyLoaded: true, paintStories() {}, dismissQuickPopover() {}, app: { inert: false },
+    document: { activeElement: null, body: { style: {} } },
     stories: [{ id: 1, title: '(주제-친구관계)', story_text: '짧은 본문' }]
   });
-  vm.runInContext(`let storyListScrollTop=0,storyHistoryActive=true,storyTrigger=null;\n${source}`, context);
+  vm.runInContext(`let storyListScrollTop=0,storyHistoryActive=false,storyTrigger=null,storyHistoryToken=null;\n${source}`, context);
+  context.openStoryBrowser();
+  storySheet.scrollTop = 420;
   await context.showStory(1);
   assert.equal(history.state.kimtokkiStoryReader, 1);
   history.back();
@@ -210,7 +213,7 @@ test('기기 뒤로가기는 Story 본문→목록→닫기 순서로 이동하�
   await context.showStory(1);
   context.requestStoryList();
   assert.equal(storySheet.scrollTop, 420);
-  assert.equal(history.state.kimtokkiStoryReader, undefined);
+  assert.equal(history.state.kimtokkiStoryReader, null);
   await context.showStory(1);
   context.requestCloseStory();
   assert.equal(storyBackdrop.hidden, true);
