@@ -62,10 +62,10 @@ test('35개 카테고리에 각각의 토끼 그림이 연결되고 기본 화�
   const names = sheets.flatMap((match) => [...match[1].matchAll(/"([^"]+)"/g)].map((item) => item[1]));
   assert.equal(names.length, 35);
   assert.equal(new Set(names).size, 35);
-  for(const sheet of ['a','b']) assert.ok(statSync(new URL(`../category-rabbits-${sheet}.webp`, import.meta.url)).size > 100000);
+  for(const sheet of ['a','b']) assert.ok(statSync(new URL(`../category-rabbits-${sheet}-clean.webp`, import.meta.url)).size > 100000);
   assert.match(script, /function updateCategoryArt\(name\)/);
   assert.match(script, /if\(name==="식사·식사시간"\)return \{image:"url\('\.\/category-rabbit-bowl-v2\.png'\)",size:"contain"/);
-  assert.match(script, /image:`url\('\.\/category-rabbits-\$\{sheet\}\.webp'\)`/);
+  assert.match(script, /image:`url\('\.\/category-rabbits-\$\{sheet\}-clean\.webp'\)`/);
   assert.match(script, /categoryArt\.style\.backgroundPosition=/);
   assert.match(script, /function updateDetailArt\(name\)/);
   assert.match(script, /updateDetailArt\(visualCategory\?\.name\)/);

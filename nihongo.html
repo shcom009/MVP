@@ -272,7 +272,7 @@
       if(!sheet)return null;
       const columns=5,rows=sheet==="a"?4:3;
       const index=(sheet==="a"?categoryScenesA:categoryScenesB).indexOf(name);
-      return {image:`url('./category-rabbits-${sheet}.webp')`,size:`${columns*100}% ${rows*100}%`,position:`${index%columns*100/(columns-1)}% ${Math.floor(index/columns)*100/(rows-1)}%`};
+      return {image:`url('./category-rabbits-${sheet}-clean.webp')`,size:`${columns*100}% ${rows*100}%`,position:`${index%columns*100/(columns-1)}% ${Math.floor(index/columns)*100/(rows-1)}%`};
     }
     function updateCategoryArt(name){
       const visual=categoryVisual(name);
