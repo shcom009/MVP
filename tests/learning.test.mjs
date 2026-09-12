@@ -1,22 +1,29 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { test } from 'node:test';
 import vm from 'node:vm';
 
 const html = readFileSync(new URL('../nihongo.html', import.meta.url), 'utf8');
-const hero = readFileSync(new URL('../hero-scene.svg', import.meta.url), 'utf8');
+const referenceImage = new URL('../mockup-hero-exact.png', import.meta.url);
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script, 'inline application script exists');
 new vm.Script(script);
 
-test('시안 일러스트는 장식이며 검색과 상세의 학습 동작을 유지한다', () => {
-  assert.match(html, /class="welcome-art" aria-hidden="true"><img src="\.\/hero-scene\.svg" alt=""/);
-  assert.match(hero, /<svg[^>]*viewBox="0 0 760 250"/);
+test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작을 유지한다', () => {
+  assert.ok(statSync(referenceImage).size > 100000, '원본 시안에서 손실 없이 분리한 PNG가 포함되어 있다');
+  assert.ok(statSync(new URL('../mockup-wordmark-exact.png', import.meta.url)).size > 10000);
+  assert.ok(statSync(new URL('../mockup-detail-rabbit.png', import.meta.url)).size > 10000);
+  assert.match(html, /class="reference-art" src="\.\/mockup-hero-exact\.png"/);
   assert.match(html, /\.app:has\(\.status:not\(\[hidden\]\)\) \.welcome-art\{display:none\}/);
+  assert.match(html, /한번 오면 빠져나갈 수 없다/);
+  assert.match(html, /내 맘대로<br \/>일본어/);
+  assert.doesNotMatch(html, /일본 여행의 든든한 일본어 친구/);
+  assert.match(html, /data-home-action="search"/);
+  assert.match(html, /data-home-action="category"/);
+  assert.match(html, /data-home-action="story"/);
   assert.match(html, /id="detailReviewBtn"/);
   assert.match(html, /id="detailFavoriteBtn"/);
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
-  assert.doesNotMatch(hero, /<text\b/);
 });
 
 const declarations = [

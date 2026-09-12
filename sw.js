@@ -1,10 +1,12 @@
-const CACHE_NAME = "kimtokki-nihongo-v24";
+const CACHE_NAME = "kimtokki-nihongo-v25";
 const ASSETS = [
   "/MVP/",
   "/MVP/index.html",
   "/MVP/nihongo.html",
   "/MVP/app-icon.svg",
-  "/MVP/hero-scene.svg",
+  "/MVP/mockup-hero-exact.png",
+  "/MVP/mockup-wordmark-exact.png",
+  "/MVP/mockup-detail-rabbit.png",
   "/MVP/manifest.webmanifest"
 ];
 
