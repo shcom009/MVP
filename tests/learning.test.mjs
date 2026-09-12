@@ -162,13 +162,60 @@ test('Story를 읽고 돌아오면 목록 위치를 복원하고 새 목록에�
     storySheet, storyLoaded: true, paintStories() {},
     stories: [{ id: 1, title: '(주제-친구관계)', story_text: '짧은 본문' }]
   });
-  vm.runInContext(`let storyListScrollTop=0;\n${source}`, context);
+  vm.runInContext(`let storyListScrollTop=0,storyHistoryActive=false;\n${source}`, context);
   await context.showStory(1);
   assert.equal(context.storySheet.scrollTop, 0);
   context.showStoryList();
   assert.equal(context.storySheet.scrollTop, 420);
   context.showStoryList();
   assert.equal(context.storySheet.scrollTop, 0);
+});
+
+test('기기 뒤로가기는 Story 본문→목록→닫기 순서로 이동하고 닫기는 기록을 남기지 않는다', async () => {
+  const names = ['showStoryList', 'showStory', 'closeStoryBrowser', 'requestStoryList', 'requestCloseStory', 'handleStoryPopState'];
+  const source = names.map(name => {
+    const prefix = name === 'showStory' ? 'async function ' : 'function ';
+    const line = script.split('\n').find(value => value.trimStart().startsWith(`${prefix}${name}(`));
+    assert.ok(line, `${name} exists`);
+    return line;
+  }).join('\n');
+  const states = [{}, { kimtokkiStory: true }];
+  let index = 1;
+  let context;
+  const history = {
+    state: states[index],
+    pushState(state) { states.splice(++index); states[index] = state; this.state = state; },
+    back() { this.go(-1); },
+    go(delta) { index += delta; this.state = states[index]; context.handleStoryPopState(); }
+  };
+  const storySheet = { scrollTop: 420 };
+  const storyList = { _hidden: false, get hidden() { return this._hidden; }, set hidden(value) {
+    this._hidden = value;
+    if (value) storySheet.scrollTop = 0;
+  } };
+  const storyBackdrop = { hidden: false };
+  context = vm.createContext({
+    history, storyBackdrop, storySheet, storyList,
+    storyReader: { hidden: true, textContent: '' }, storyBackBtn: { hidden: true, focus() {} },
+    storyHeading: { textContent: '' }, storyTabs: { hidden: false }, storyCloseBtn: { focus() {} },
+    storyLoaded: true, paintStories() {}, app: { inert: true }, document: { body: { style: {} } },
+    stories: [{ id: 1, title: '(주제-친구관계)', story_text: '짧은 본문' }]
+  });
+  vm.runInContext(`let storyListScrollTop=0,storyHistoryActive=true,storyTrigger=null;\n${source}`, context);
+  await context.showStory(1);
+  assert.equal(history.state.kimtokkiStoryReader, 1);
+  history.back();
+  assert.equal(storySheet.scrollTop, 420);
+  assert.equal(storyBackdrop.hidden, false);
+  await context.showStory(1);
+  context.requestStoryList();
+  assert.equal(storySheet.scrollTop, 420);
+  assert.equal(history.state.kimtokkiStoryReader, undefined);
+  await context.showStory(1);
+  context.requestCloseStory();
+  assert.equal(storyBackdrop.hidden, true);
+  assert.equal(index, 0);
+  assert.match(script, /storyBackBtn\.addEventListener\("click",requestStoryList\)/);
 });
 
 test('백업에는 복습·즐겨찾기만 들어가고 최근 본 표현은 제외된다', () => {
