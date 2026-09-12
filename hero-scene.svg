@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" role="img" aria-label="벚꽃과 후지산, 토끼 일러스트">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#fff4ef"/><stop offset="1" stop-color="#ffe5e9"/></linearGradient>
+    <linearGradient id="hill" x2="0" y2="1"><stop stop-color="#b9e1df"/><stop offset="1" stop-color="#91ceca"/></linearGradient>
+  </defs>
+  <rect width="760" height="250" rx="28" fill="url(#sky)"/>
+  <circle cx="568" cy="58" r="35" fill="#fffaf0" opacity=".85"/>
+  <path d="M70 208 278 44l181 164Z" fill="#b9d9e7"/>
+  <path d="m198 108 80-64 72 64-34-13-32 18-29-19-26 17Z" fill="#fffaf7"/>
+  <path d="M0 185q102-64 211 5 115-51 212 3 174-66 337 17v40H0Z" fill="#d0e9e5"/>
+  <path d="M0 211q123-64 269 15 104-54 233-19 123-32 258 12v31H0Z" fill="url(#hill)"/>
+  <path d="M0 213q71-23 116 3m101 24q35-27 81-9m218-11q46-19 94 8" fill="none" stroke="#91cbc5" stroke-width="3" opacity=".7"/>
+  <path d="M0 26q88 16 172 109M0 86q45 4 99 28M740 0q-87 54-128 146m148-71q-61-3-102 36" fill="none" stroke="#936b74" stroke-width="8" stroke-linecap="round"/>
+  <g fill="#f4aebf"><circle cx="39" cy="40" r="14"/><circle cx="74" cy="59" r="15"/><circle cx="112" cy="84" r="13"/><circle cx="150" cy="118" r="14"/><circle cx="45" cy="96" r="12"/><circle cx="685" cy="43" r="15"/><circle cx="663" cy="77" r="12"/><circle cx="629" cy="105" r="14"/><circle cx="738" cy="96" r="14"/></g>
+  <g fill="#fff8f5" opacity=".9"><circle cx="39" cy="40" r="4"/><circle cx="74" cy="59" r="4"/><circle cx="112" cy="84" r="4"/><circle cx="150" cy="118" r="4"/><circle cx="685" cy="43" r="4"/><circle cx="663" cy="77" r="4"/><circle cx="629" cy="105" r="4"/></g>
+  <g transform="translate(482 80)">
+    <ellipse cx="77" cy="143" rx="92" ry="26" fill="#78bdb8" opacity=".35"/>
+    <ellipse cx="44" cy="40" rx="17" ry="51" transform="rotate(-13 44 40)" fill="#fff"/>
+    <ellipse cx="105" cy="35" rx="17" ry="51" transform="rotate(13 105 35)" fill="#fff"/>
+    <ellipse cx="44" cy="35" rx="8" ry="35" transform="rotate(-13 44 35)" fill="#ffc3cc"/>
+    <ellipse cx="105" cy="30" rx="8" ry="35" transform="rotate(13 105 30)" fill="#ffc3cc"/>
+    <ellipse cx="75" cy="114" rx="79" ry="61" fill="#fff"/>
+    <circle cx="45" cy="109" r="6" fill="#3e333b"/><circle cx="106" cy="109" r="6" fill="#3e333b"/>
+    <circle cx="32" cy="126" r="10" fill="#ffbec8" opacity=".8"/><circle cx="118" cy="126" r="10" fill="#ffbec8" opacity=".8"/>
+    <path d="M69 123q6-5 12 0-6 8-12 0" fill="#ec879c"/><path d="M75 126v7q-9 10-18 1m18-1q9 10 18 1" fill="none" stroke="#4c4045" stroke-width="2.3" stroke-linecap="round"/>
+  </g>
+  <g fill="#f6b7c5" opacity=".9"><path d="m207 154 7 5-6 5-6-5Z"/><path d="m401 74 7 4-4 7-7-4Z"/><path d="m691 153 7 4-4 7-7-4Z"/></g>
+</svg>

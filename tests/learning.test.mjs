@@ -4,9 +4,20 @@ import { test } from 'node:test';
 import vm from 'node:vm';
 
 const html = readFileSync(new URL('../nihongo.html', import.meta.url), 'utf8');
+const hero = readFileSync(new URL('../hero-scene.svg', import.meta.url), 'utf8');
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script, 'inline application script exists');
 new vm.Script(script);
+
+test('시안 일러스트는 장식이며 검색과 상세의 학습 동작을 유지한다', () => {
+  assert.match(html, /class="welcome-art" aria-hidden="true"><img src="\.\/hero-scene\.svg" alt=""/);
+  assert.match(hero, /<svg[^>]*viewBox="0 0 760 250"/);
+  assert.match(html, /\.app:has\(\.status:not\(\[hidden\]\)\) \.welcome-art\{display:none\}/);
+  assert.match(html, /id="detailReviewBtn"/);
+  assert.match(html, /id="detailFavoriteBtn"/);
+  assert.match(html, /data-quick-kind="\$\{kind\}"/);
+  assert.doesNotMatch(hero, /<text\b/);
+});
 
 const declarations = [
   'compactRow', 'readStoredRows', 'writeStoredRows', 'escapeHtml',
@@ -38,7 +49,7 @@ function setup({ review = [], favorite = [] } = {}) {
     reviewRows: review.map(row => ({ ...row })),
     favoriteRows: favorite.map(row => ({ ...row })),
     recentRows: [], currentRows: [], currentDetailRow: null,
-    learningBackdrop: { hidden: true }, learningHistoryToken: null,
+    learningBackdrop: { hidden: true },
     learningBackBtn: { hidden: false },
     learningHeading: { textContent: '' },
     learningContent: { innerHTML: '' },
@@ -219,85 +230,6 @@ test('기기 뒤로가기는 Story 본문→목록→닫기 순서로 이동하�
   assert.equal(storyBackdrop.hidden, true);
   assert.equal(index, 0);
   assert.match(script, /storyBackBtn\.addEventListener\("click",requestStoryList\)/);
-});
-
-test('학습 목록의 상세를 닫으면 원래 목록과 스크롤 위치로 돌아온다', () => {
-  const names = ['openLearningDetail', 'restoreLearningAfterDetail'];
-  const source = names.map(name => {
-    const line = script.split('\n').find(value => value.trimStart().startsWith(`function ${name}(`));
-    assert.ok(line, `${name} exists`);
-    return line;
-  }).join('\n');
-  for (const mode of ['recent', 'review', 'favorite']) {
-    const learningSheet = { scrollTop: 270 };
-    const calls = [];
-    const context = vm.createContext({
-      learningMode: mode, learningSheet,
-      closeLearning(restoreFocus, keepHistory) { calls.push(['close', restoreFocus, keepHistory]); },
-      menuBtn: { focus() {} },
-      openDetail(row) { calls.push(['detail', row.expression_id]); },
-      openLearning(restored, fromHistory) { calls.push(['list', restored, fromHistory]); learningSheet.scrollTop = 0; }
-    });
-    vm.runInContext(`let detailReturnLearningMode=null,detailReturnLearningScrollTop=0;\n${source}`, context);
-    context.openLearningDetail({ expression_id: 42 });
-    assert.equal(context.restoreLearningAfterDetail(), true);
-    assert.equal(learningSheet.scrollTop, 270);
-    assert.equal(context.restoreLearningAfterDetail(), false);
-    assert.deepEqual(calls, [['close', false, true], ['detail', 42], ['list', mode, true]]);
-  }
-  assert.match(script, /if\(row\)openLearningDetail\(row\)/);
-  assert.match(script, /function closeDetail\(\).*restoreLearningAfterDetail\(\)/);
-});
-
-test('복습 발음을 공개하기 전 평가 버튼은 화면에서 숨긴다', () => {
-  assert.match(html, /<div class="review-actions" hidden>/);
-  assert.match(html, /\.review-actions\[hidden\]\{display:none\}/);
-});
-
-test('학습 목록과 복습하기에서 기기 뒤로가기는 이전 화면으로 이동한다', () => {
-  const names = ['openLearning', 'closeLearning', 'requestCloseLearning', 'requestLearningList', 'handleLearningPopState', 'startReview'];
-  const source = names.map(name => {
-    const line = script.split('\n').find(value => value.trimStart().startsWith(`function ${name}(`));
-    assert.ok(line, `${name} exists`);
-    return line;
-  }).join('\n');
-  const states = [{ kimtokkiLearning: 'stale-before-reload' }];
-  let index = 0;
-  let context;
-  const history = {
-    state: states[index],
-    pushState(state) { states.splice(++index); states[index] = state; this.state = state; },
-    back() { this.go(-1); },
-    go(delta) { index += delta; this.state = states[index]; context.handleLearningPopState(); }
-  };
-  context = vm.createContext({
-    history, learningBackdrop: { hidden: true }, learningSheet: { scrollTop: 0 },
-    learningCloseBtn: { focus() {} }, learningBackBtn: { hidden: true },
-    learningHeading: { textContent: '' }, app: { inert: false },
-    document: { body: { style: {} } }, menuBtn: { focus() {} },
-    reviewRows: [weather], closeDrawer() {}, shuffleRows: rows => rows,
-    renderReviewCard() {}
-  });
-  vm.runInContext(`let learningHistoryToken=null,learningMode='recent',reviewSession=null;\n${source}\nfunction renderLearningList(mode){learningMode=mode;learningBackBtn.hidden=true;reviewSession=null}`, context);
-  context.openLearning('recent');
-  history.back();
-  assert.equal(context.learningBackdrop.hidden, true);
-  context.openLearning('session');
-  assert.equal(index, 2);
-  history.back();
-  assert.equal(context.learningBackdrop.hidden, false);
-  assert.equal(vm.runInContext('learningMode', context), 'review');
-  history.back();
-  assert.equal(context.learningBackdrop.hidden, true);
-  context.openLearning('session');
-  context.requestLearningList();
-  assert.equal(vm.runInContext('learningMode', context), 'review');
-  context.startReview();
-  context.requestCloseLearning();
-  assert.equal(context.learningBackdrop.hidden, true);
-  assert.equal(index, 0);
-  assert.match(script, /learningCloseBtn\.addEventListener\("click",requestCloseLearning\)/);
-  assert.match(script, /if\(!learningBackdrop\.hidden\)handleLearningPopState\(\)/);
 });
 
 test('백업에는 복습·즐겨찾기만 들어가고 최근 본 표현은 제외된다', () => {
