@@ -17,6 +17,7 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /\.app:has\(\.status:not\(\[hidden\]\)\) \.welcome-art\{display:none\}/);
   assert.match(html, /한번 오면 빠져나갈 수 없다/);
   assert.match(html, /내 맘대로<br \/>일본어/);
+  assert.match(html, /환영<br class="sticker-mobile-break" \/>해요!/);
   assert.doesNotMatch(html, /일본 여행의 든든한 일본어 친구/);
   assert.match(html, /data-home-action="recent"/);
   assert.match(html, /data-home-action="review"/);
