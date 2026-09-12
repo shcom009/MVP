@@ -122,7 +122,8 @@ test('화면에 즐겨찾기 버튼과 메뉴가 존재한다', () => {
 test('복습 체크와 즐겨찾기는 충분한 터치 영역을 갖고 작은 화면에서 본문과 분리된다', () => {
   const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)'));
   assert.ok(html.includes('width:44px;height:44px'), '44px buttons');
-  assert.ok(html.includes('.review-toggle::before{content:"✓"'), 'visible review check');
+  assert.ok(html.includes('.review-toggle::before{content:"+"'), 'unselected review icon');
+  assert.ok(html.includes('.review-toggle.active::before{content:"✓"'), 'selected review icon');
   assert.ok(mobile?.includes('.result{padding-bottom:56px}'), 'separate action area');
   assert.ok(mobile?.includes('.result>.review-toggle,.result>.favorite-toggle{top:auto;bottom:8px}'));
   assert.ok(mobile?.includes('.detail-main>.review-toggle,.detail-main>.favorite-toggle{top:auto;bottom:10px}'));
@@ -140,6 +141,29 @@ test('Story 탭은 주제별·엣지·기타 순서이고 주제별이 처음 �
   ]);
   assert.match(script, /storyGroup="dialogue"/);
   assert.match(script, /if\(story\.story_only\)return "edge"/);
+});
+
+test('Story를 읽고 돌아오면 목록 위치를 복원하고 새 목록에서는 맨 위에서 시작한다', async () => {
+  const source = ['showStoryList', 'showStory'].map(name => {
+    const prefix = name === 'showStory' ? 'async function ' : 'function ';
+    const line = script.split('\n').find(value => value.trimStart().startsWith(`${prefix}${name}(`));
+    assert.ok(line, `${name} exists`);
+    return line;
+  }).join('\n');
+  const context = vm.createContext({
+    storyBackBtn: { hidden: true, focus() {} },
+    storyHeading: { textContent: '' }, storyTabs: { hidden: false },
+    storyReader: { hidden: true, textContent: '' }, storyList: { hidden: false },
+    storySheet: { scrollTop: 420 }, storyLoaded: true, paintStories() {},
+    stories: [{ id: 1, title: '첫 이야기', story_text: '본문' }]
+  });
+  vm.runInContext(`let storyListScrollTop=0;\n${source}`, context);
+  await context.showStory(1);
+  assert.equal(context.storySheet.scrollTop, 0);
+  context.showStoryList();
+  assert.equal(context.storySheet.scrollTop, 420);
+  context.showStoryList();
+  assert.equal(context.storySheet.scrollTop, 0);
 });
 
 test('백업에는 복습·즐겨찾기만 들어가고 최근 본 표현은 제외된다', () => {
