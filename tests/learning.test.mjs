@@ -26,7 +26,7 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.doesNotMatch(html, /id="hint"/);
   assert.match(html, /class="quick-search"/);
   assert.match(html, /class="category-layout"/);
-  assert.match(html, /id="categoryArt" class="category-rabbit" src="\.\/category-rabbit-upper-v2\.png"/);
+  assert.match(html, /id="categoryArt" class="category-rabbit" role="img"/);
   assert.ok(statSync(new URL('../category-rabbit-upper-v2.png', import.meta.url)).size > 100000, '상체와 음식이 크게 보이는 토끼 이미지');
   assert.ok(statSync(new URL('../category-rabbit-bowl-v2.png', import.meta.url)).size > 100000, '식사 카테고리의 토끼 이미지');
   for(const name of ['recent','review','favorite']) {
@@ -52,18 +52,20 @@ test('가로 3개 학습 영역과 카테고리 접기·펼치기가 기존 연�
   assert.match(html, /id="categoryLayout" class="category-layout"/);
   assert.match(script, /categoryToggleBtn\.addEventListener\("click"/);
   assert.match(script, /categoryLayout\.hidden=!categoryLayout\.hidden/);
-  assert.match(script, /if\(name==="식사·식사시간"\)\{categoryArt\.src="\.\/category-rabbit-bowl-v2\.png"/);
+  assert.match(script, /categoryScenesB\.includes\(name\)/);
+  assert.match(html, /\.home-learning-heading img\{width:96px;height:96px/);
+  assert.match(html, /\.home-learning-heading img\{width:80px;height:80px/);
 });
 
-test('35개 카테고리에 서로 다른 그림과 배경이 적용되고 기본 화면은 토끼를 표시한다', () => {
-  const motifSource = script.match(/const categoryMotifs=([\s\S]*?);\s*const categoryHues=/)?.[1];
-  assert.ok(motifSource, '카테고리 그림 정의가 존재한다');
-  const motifs = vm.runInNewContext('(' + motifSource + ')');
-  assert.equal(Object.keys(motifs).length, 35);
-  assert.equal(new Set(Object.values(motifs)).size, 35);
+test('35개 카테고리에 각각의 토끼 그림이 연결되고 기본 화면도 토끼를 표시한다', () => {
+  const sheets = [...script.matchAll(/const categoryScenes[AB]=\[([\s\S]*?)\];/g)];
+  const names = sheets.flatMap((match) => [...match[1].matchAll(/"([^"]+)"/g)].map((item) => item[1]));
+  assert.equal(names.length, 35);
+  assert.equal(new Set(names).size, 35);
+  for(const sheet of ['a','b']) assert.ok(statSync(new URL(`../category-rabbits-${sheet}.webp`, import.meta.url)).size > 100000);
   assert.match(script, /function updateCategoryArt\(name\)/);
-  assert.match(script, /categoryArt\.src="data:image\/svg\+xml;charset=utf-8,"\+encodeURIComponent\(svg\)/);
-  assert.match(script, /categoryArt\.style\.backgroundColor=background/);
+  assert.match(script, /categoryArt\.style\.backgroundImage=`url\('\.\/category-rabbits-\$\{sheet\}\.webp'\)`/);
+  assert.match(script, /categoryArt\.style\.backgroundPosition=/);
   assert.match(script, /updateCategoryArt\(categoryName\)/);
   assert.match(script, /updateCategoryArt\(null\)/);
 });
