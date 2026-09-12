@@ -19,6 +19,8 @@ const declarations = [
   assert.ok(line, `${name} exists`);
   return line;
 }).join('\n');
+const backupDeclarations = script.match(/function createLearningBackup\(\)[\s\S]*?(?=    function formSubtypeLabel\()/)?.[0];
+assert.ok(backupDeclarations, 'backup functions exist');
 
 const weather = { expression_id: 1, meaning_text: '날씨', display_pronunciation: '텐키' };
 const sunny = { expression_id: 2, meaning_text: '맑음', display_pronunciation: '하레' };
@@ -28,9 +30,11 @@ function setup({ review = [], favorite = [] } = {}) {
   const context = vm.createContext({
     localStorage: {
       getItem: key => saved.get(key) ?? null,
-      setItem: (key, value) => saved.set(key, value)
+      setItem: (key, value) => saved.set(key, value),
+      removeItem: key => saved.delete(key)
     },
     REVIEW_STORAGE_KEY: 'review', FAVORITE_STORAGE_KEY: 'favorite',
+    BACKUP_KIND: 'kimtokki-learning-backup', BACKUP_VERSION: 1, BACKUP_MAX_ROWS: 5000,
     reviewRows: review.map(row => ({ ...row })),
     favoriteRows: favorite.map(row => ({ ...row })),
     recentRows: [], currentRows: [], currentDetailRow: null,
@@ -42,9 +46,9 @@ function setup({ review = [], favorite = [] } = {}) {
     reviewCount: { textContent: '' },
     favoriteCount: { textContent: '' },
     drawerReviewStart: { disabled: false },
-    paintResults() {}, setFavoriteButton() {}
+    paintResults() {}, setFavoriteButton() {}, setReviewButton() {}
   });
-  vm.runInContext(declarations, context);
+  vm.runInContext(`${declarations}\n${backupDeclarations}`, context);
   return { context, saved };
 }
 
@@ -136,4 +140,61 @@ test('Story 탭은 주제별·엣지·기타 순서이고 주제별이 처음 �
   ]);
   assert.match(script, /storyGroup="dialogue"/);
   assert.match(script, /if\(story\.story_only\)return "edge"/);
+});
+
+test('백업에는 복습·즐겨찾기만 들어가고 최근 본 표현은 제외된다', () => {
+  const { context } = setup({ review: [weather], favorite: [sunny] });
+  context.recentRows = [weather];
+  const backup = JSON.parse(JSON.stringify(context.createLearningBackup()));
+  assert.equal(backup.kind, 'kimtokki-learning-backup');
+  assert.equal(backup.version, 1);
+  assert.deepEqual(backup.review, [weather]);
+  assert.deepEqual(backup.favorite, [sunny]);
+  assert.equal('recent' in backup, false);
+});
+
+test('가져오기는 기존 목록을 유지하고 중복 표현은 추가하지 않는다', () => {
+  const { context, saved } = setup({ review: [weather], favorite: [sunny] });
+  const backup = { kind: 'kimtokki-learning-backup', version: 1, review: [weather, sunny, sunny], favorite: [sunny, weather] };
+  const result = context.restoreLearningBackup(JSON.stringify(backup));
+  assert.equal(result.reviewAdded, 1);
+  assert.equal(result.favoriteAdded, 1);
+  assert.deepEqual(JSON.parse(saved.get('review')), [weather, sunny]);
+  assert.deepEqual(JSON.parse(saved.get('favorite')), [sunny, weather]);
+  assert.equal(context.reviewCount.textContent, '2');
+  assert.equal(context.favoriteCount.textContent, '2');
+});
+
+test('형식이 다르거나 표현이 잘못된 파일은 목록을 수정하지 않는다', () => {
+  const { context, saved } = setup({ review: [weather] });
+  assert.throws(() => context.restoreLearningBackup('{}'), /백업 파일이 아닙니다/);
+  assert.throws(() => context.restoreLearningBackup('{broken'), /읽을 수 없습니다/);
+  assert.throws(() => context.restoreLearningBackup(JSON.stringify({
+    kind: 'kimtokki-learning-backup', version: 1, review: [{ ...sunny, expression_id: -2 }], favorite: []
+  })), /잘못된 표현/);
+  assert.equal(context.reviewRows.length, 1);
+  assert.equal(saved.size, 0);
+});
+
+test('저장 실패 시 메모리 목록과 이전 복습 저장값을 유지한다', () => {
+  const { context, saved } = setup({ review: [weather] });
+  saved.set('review', JSON.stringify([weather]));
+  const setItem = context.localStorage.setItem;
+  context.localStorage.setItem = (key, value) => {
+    if (key === 'favorite') throw new Error('quota');
+    setItem(key, value);
+  };
+  assert.throws(() => context.restoreLearningBackup(JSON.stringify({
+    kind: 'kimtokki-learning-backup', version: 1, review: [sunny], favorite: [sunny]
+  })), /저장하지 못했습니다/);
+  assert.deepEqual(JSON.parse(saved.get('review')), [weather]);
+  assert.equal(context.reviewRows.length, 1);
+  assert.equal(context.favoriteRows.length, 0);
+});
+
+test('메뉴에 내보내기·가져오기 동작과 파일 선택창이 있다', () => {
+  assert.match(html, /id="exportBackupBtn"/);
+  assert.match(html, /id="importBackupBtn"/);
+  assert.match(html, /id="backupFileInput"[^>]*type="file"/);
+  assert.match(html, /복습·즐겨찾기만 백업합니다/);
 });
