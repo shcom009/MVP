@@ -216,7 +216,7 @@ test('화면에 즐겨찾기 버튼과 메뉴가 존재한다', () => {
 });
 
 test('복습 체크와 즐겨찾기는 충분한 터치 영역을 갖고 작은 화면에서 본문과 분리된다', () => {
-  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)'));
+  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)') && line.includes('.result{padding-bottom:56px}'));
   assert.ok(html.includes('width:44px;height:44px'), '44px buttons');
   assert.ok(html.includes('.review-toggle::before{content:"+"'), 'unselected review icon');
   assert.ok(html.includes('.review-toggle.active::before{content:"✓"'), 'selected review icon');
@@ -225,7 +225,7 @@ test('복습 체크와 즐겨찾기는 충분한 터치 영역을 갖고 작은 
   assert.ok(mobile?.includes('.detail-main>.review-toggle,.detail-main>.favorite-toggle{top:auto;bottom:10px}'));
 });
 
-test('Story 탭은 주제별·엣지·기타 순서이고 주제별이 처음 열린다', () => {
+test('Story 탭은 기존 순서를 지키고 카시를 추가하며 주제별이 처음 열린다', () => {
   const tabs = html.match(/<div id="storyTabs" class="story-tabs">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(tabs);
   const buttons = [...tabs.matchAll(/<button class="story-tab( active)?"[^>]*data-story-group="([^"]+)">([^<]+)<\/button>/g)]
@@ -233,10 +233,29 @@ test('Story 탭은 주제별·엣지·기타 순서이고 주제별이 처음 �
   assert.deepEqual(buttons, [
     { active: true, group: 'dialogue', label: '주제별' },
     { active: false, group: 'edge', label: '엣지' },
-    { active: false, group: 'other', label: '기타' }
+    { active: false, group: 'other', label: '기타' },
+    { active: false, group: 'kashi', label: '카시' }
   ]);
   assert.match(script, /storyGroup="dialogue"/);
   assert.match(script, /if\(story\.story_only\)return "edge"/);
+});
+
+test('카시 검색은 선별된 가사 구절만 원본 노래에 연결한다', () => {
+  const data = readFileSync(new URL('../kashi-jane-doe.js', import.meta.url), 'utf8');
+  const context = {window:{}};
+  vm.runInNewContext(data, context);
+  const song = context.window.KASHI_SONGS[0];
+  assert.equal(song.kind, 'kashi');
+  assert.equal(song.lines.length, 31);
+  assert.equal(song.lines.filter(line => line[0] === '도코니 이루노').length, 2);
+  const matcher = script.split('\n').find(line => line.trimStart().startsWith('function matchKashi('));
+  vm.runInNewContext(`${matcher};this.match=matchKashi`, context);
+  assert.equal(context.match('도코니 이루노')?.song.title, 'JANE DOE');
+  assert.equal(context.match('JANE DOE')?.song.id, -1);
+  assert.equal(context.match('유리 위를')?.song, undefined);
+  assert.equal(context.match('가라스노')?.song, undefined);
+  assert.match(html, /data-kashi-result/);
+  assert.match(html, /kashi-cover/);
 });
 
 test('Story를 읽고 돌아오면 목록 위치를 복원하고 새 목록에서는 맨 위에서 시작한다', async () => {
