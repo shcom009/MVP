@@ -150,12 +150,17 @@ test('Story를 읽고 돌아오면 목록 위치를 복원하고 새 목록에�
     assert.ok(line, `${name} exists`);
     return line;
   }).join('\n');
+  const storySheet = { scrollTop: 420 };
+  const storyList = { _hidden: false, get hidden() { return this._hidden; }, set hidden(value) {
+    this._hidden = value;
+    if (value) storySheet.scrollTop = 0; // 짧은 주제별 본문은 목록을 숨기는 즉시 스크롤이 0으로 제한된다.
+  } };
   const context = vm.createContext({
     storyBackBtn: { hidden: true, focus() {} },
     storyHeading: { textContent: '' }, storyTabs: { hidden: false },
-    storyReader: { hidden: true, textContent: '' }, storyList: { hidden: false },
-    storySheet: { scrollTop: 420 }, storyLoaded: true, paintStories() {},
-    stories: [{ id: 1, title: '첫 이야기', story_text: '본문' }]
+    storyReader: { hidden: true, textContent: '' }, storyList,
+    storySheet, storyLoaded: true, paintStories() {},
+    stories: [{ id: 1, title: '(주제-친구관계)', story_text: '짧은 본문' }]
   });
   vm.runInContext(`let storyListScrollTop=0;\n${source}`, context);
   await context.showStory(1);
