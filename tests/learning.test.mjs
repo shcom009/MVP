@@ -26,7 +26,8 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.doesNotMatch(html, /id="hint"/);
   assert.match(html, /class="quick-search"/);
   assert.match(html, /class="category-layout"/);
-  assert.match(html, /class="category-rabbit" src="\.\/mockup-detail-rabbit\.png"/);
+  assert.match(html, /id="categoryArt" class="category-rabbit" src="\.\/category-rabbit-centered-384\.png"/);
+  assert.ok(statSync(new URL('../category-rabbit-centered-384.png', import.meta.url)).size > 100000, '손과 포크가 잘리지 않은 토끼 이미지');
   assert.doesNotMatch(html, /class="home-learning-rabbit"/);
   assert.match(html, /font-family:"Jua"/);
   assert.match(html, /font-family:"Gaegu"/);
@@ -37,6 +38,19 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /id="detailReviewBtn"/);
   assert.match(html, /id="detailFavoriteBtn"/);
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
+});
+
+test('35개 카테고리에 서로 다른 그림과 배경이 적용되고 기본 화면은 토끼를 표시한다', () => {
+  const motifSource = script.match(/const categoryMotifs=([\s\S]*?);\s*const categoryHues=/)?.[1];
+  assert.ok(motifSource, '카테고리 그림 정의가 존재한다');
+  const motifs = vm.runInNewContext('(' + motifSource + ')');
+  assert.equal(Object.keys(motifs).length, 35);
+  assert.equal(new Set(Object.values(motifs)).size, 35);
+  assert.match(script, /function updateCategoryArt\(name\)/);
+  assert.match(script, /categoryArt\.src="data:image\/svg\+xml;charset=utf-8,"\+encodeURIComponent\(svg\)/);
+  assert.match(script, /categoryArt\.style\.backgroundColor=background/);
+  assert.match(script, /updateCategoryArt\(categoryName\)/);
+  assert.match(script, /updateCategoryArt\(null\)/);
 });
 
 const declarations = [
