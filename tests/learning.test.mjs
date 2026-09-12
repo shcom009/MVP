@@ -114,3 +114,12 @@ test('화면에 즐겨찾기 버튼과 메뉴가 존재한다', () => {
   assert.match(html, /data-library="favorite"/);
   assert.match(html, /favoriteButton\)\{toggleFavorite\(currentRows\[index\]\)/);
 });
+
+test('복습 체크와 즐겨찾기는 충분한 터치 영역을 갖고 작은 화면에서 본문과 분리된다', () => {
+  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)'));
+  assert.ok(html.includes('width:44px;height:44px'), '44px buttons');
+  assert.ok(html.includes('.review-toggle::before{content:"✓"'), 'visible review check');
+  assert.ok(mobile?.includes('.result{padding-bottom:56px}'), 'separate action area');
+  assert.ok(mobile?.includes('.result>.review-toggle,.result>.favorite-toggle{top:auto;bottom:8px}'));
+  assert.ok(mobile?.includes('.detail-main>.review-toggle,.detail-main>.favorite-toggle{top:auto;bottom:10px}'));
+});
