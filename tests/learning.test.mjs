@@ -250,12 +250,33 @@ test('카시 검색은 선별된 가사 구절만 원본 노래에 연결한다'
   assert.equal(song.lines.filter(line => line[0] === '도코니 이루노').length, 2);
   const matcher = script.split('\n').find(line => line.trimStart().startsWith('function matchKashi('));
   vm.runInNewContext(`${matcher};this.match=matchKashi`, context);
-  assert.equal(context.match('도코니 이루노')?.song.title, 'JANE DOE');
-  assert.equal(context.match('JANE DOE')?.song.id, -1);
-  assert.equal(context.match('유리 위를')?.song, undefined);
-  assert.equal(context.match('가라스노')?.song, undefined);
+  assert.equal(context.match('도코니 이루노')[0]?.song.title, 'JANE DOE');
+  assert.equal(context.match('JANE DOE')[0]?.song.id, -1);
+  assert.equal(context.match('유리 위를').length, 0);
+  assert.equal(context.match('가라스노').length, 0);
   assert.match(html, /data-kashi-result/);
   assert.match(html, /kashi-cover/);
+});
+
+test('업로드한 38곡은 노래별로 분리되고 뜻·발음의 방향을 유지한다', () => {
+  const data = readFileSync(new URL('../kashi-collection.js', import.meta.url), 'utf8');
+  const context = {window:{KASHI_SONGS:[]}};
+  vm.runInNewContext(data, context);
+  const songs = context.window.KASHI_SONGS;
+  assert.equal(songs.length, 38);
+  assert.equal(new Set(songs.map(song => song.id)).size, 38);
+  assert.ok(songs.every(song => song.lines.length > 10));
+  assert.ok(songs.every(song => song.artist));
+  assert.equal(songs[0].artist, 'EGOIST (에고이스트)');
+  assert.equal(songs[18].lines.find(line => line[0].includes('키즈츠키나가라'))[1], '상처받으면서 고동치고 있잖아');
+  assert.equal(songs[31].lines[0][0], '돈나히토니나레바이이다로');
+  assert.equal(songs[31].lines[0][1], '어떤 사람이 되면 좋을까');
+  assert.ok(songs[21].notes.length > 20);
+  const matcher = script.split('\n').find(line => line.trimStart().startsWith('function matchKashi('));
+  vm.runInNewContext(`${matcher};this.match=matchKashi`, context);
+  assert.ok(context.match('아이묭').length >= 5);
+  assert.equal(context.match('도대체 이대로')[0]?.song.title, '하다카노 코코로');
+  assert.equal(context.match('후자케루').length, 0, '단어 메모는 검색 DB에 자동 투입하지 않는다');
 });
 
 test('Story를 읽고 돌아오면 목록 위치를 복원하고 새 목록에서는 맨 위에서 시작한다', async () => {
