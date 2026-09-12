@@ -18,9 +18,12 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /한번 오면 빠져나갈 수 없다/);
   assert.match(html, /내 맘대로<br \/>일본어/);
   assert.doesNotMatch(html, /일본 여행의 든든한 일본어 친구/);
-  assert.match(html, /data-home-action="search"/);
-  assert.match(html, /data-home-action="category"/);
-  assert.match(html, /data-home-action="story"/);
+  assert.match(html, /data-home-action="recent"/);
+  assert.match(html, /data-home-action="review"/);
+  assert.match(html, /data-home-action="favorite"/);
+  assert.doesNotMatch(html, /data-home-action="(?:search|category|story)"/);
+  assert.match(html, /id="categoryMoreBtn"[^>]*aria-controls="categoryStrip"/);
+  assert.match(html, /categoryStrip\.classList\.toggle\("expanded"\)/);
   assert.match(html, /id="detailReviewBtn"/);
   assert.match(html, /id="detailFavoriteBtn"/);
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
@@ -45,7 +48,9 @@ const sunny = { expression_id: 2, meaning_text: '맑음', display_pronunciation:
 
 function setup({ review = [], favorite = [] } = {}) {
   const saved = new Map();
+  const homeCounts = Object.fromEntries(['homeRecentCount', 'homeReviewCount', 'homeFavoriteCount'].map(id => [id, { textContent: '' }]));
   const context = vm.createContext({
+    document: { getElementById: id => homeCounts[id] ?? null },
     localStorage: {
       getItem: key => saved.get(key) ?? null,
       setItem: (key, value) => saved.set(key, value),
@@ -67,8 +72,17 @@ function setup({ review = [], favorite = [] } = {}) {
     paintResults() {}, setFavoriteButton() {}, setReviewButton() {}
   });
   vm.runInContext(`${declarations}\n${backupDeclarations}`, context);
-  return { context, saved };
+  return { context, saved, homeCounts };
 }
+
+test('첫 화면의 학습 건수가 기존 학습 목록과 함께 갱신된다', () => {
+  const { context, homeCounts } = setup({ review: [weather], favorite: [sunny] });
+  context.recentRows = [weather, sunny];
+  context.updateLearningCounts();
+  assert.deepEqual(Object.values(homeCounts).map(badge => badge.textContent), ['2', '1', '1']);
+  context.toggleReview(weather);
+  assert.equal(homeCounts.homeReviewCount.textContent, '0');
+});
 
 test('기억함은 복습 목록에서만 제거하고 즐겨찾기는 남긴다', () => {
   const { context, saved } = setup({ review: [weather], favorite: [weather] });
