@@ -123,3 +123,17 @@ test('복습 체크와 즐겨찾기는 충분한 터치 영역을 갖고 작은 
   assert.ok(mobile?.includes('.result>.review-toggle,.result>.favorite-toggle{top:auto;bottom:8px}'));
   assert.ok(mobile?.includes('.detail-main>.review-toggle,.detail-main>.favorite-toggle{top:auto;bottom:10px}'));
 });
+
+test('Story 탭은 주제별·엣지·기타 순서이고 주제별이 처음 열린다', () => {
+  const tabs = html.match(/<div id="storyTabs" class="story-tabs">([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(tabs);
+  const buttons = [...tabs.matchAll(/<button class="story-tab( active)?"[^>]*data-story-group="([^"]+)">([^<]+)<\/button>/g)]
+    .map(([, active, group, label]) => ({ active: Boolean(active), group, label }));
+  assert.deepEqual(buttons, [
+    { active: true, group: 'dialogue', label: '주제별' },
+    { active: false, group: 'edge', label: '엣지' },
+    { active: false, group: 'other', label: '기타' }
+  ]);
+  assert.match(script, /storyGroup="dialogue"/);
+  assert.match(script, /if\(story\.story_only\)return "edge"/);
+});

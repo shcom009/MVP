@@ -96,8 +96,8 @@
         <button id="storyCloseBtn" class="close-btn" type="button" aria-label="닫기">×</button>
       </div>
       <div id="storyTabs" class="story-tabs">
-        <button class="story-tab active" type="button" data-story-group="edge">엣지 대화</button>
-        <button class="story-tab" type="button" data-story-group="dialogue">(대화-</button>
+        <button class="story-tab active" type="button" data-story-group="dialogue">주제별</button>
+        <button class="story-tab" type="button" data-story-group="edge">엣지</button>
         <button class="story-tab" type="button" data-story-group="other">기타</button>
       </div>
       <div id="storyList" class="story-list"></div>
@@ -144,7 +144,7 @@
     const noteLabel={EXAMPLE:"예시",HINT:"힌트",REFERENCE:"참조"};
     const INITIAL_SEARCH_RESULTS=8;
     const RECENT_STORAGE_KEY="kimtokki_recent_v1",REVIEW_STORAGE_KEY="kimtokki_review_v1",FAVORITE_STORAGE_KEY="kimtokki_favorite_v1",RECENT_LIMIT=30;
-    let currentRows=[],currentVisibleCount=0,listExtras=new Map(),activeCategoryId=null,currentNoteGroups={},currentRelationGroups={},currentDialogues=[],currentExpressionId=null,currentDetailRow=null,currentBaseForm=null,detailStack=[],pendingDetailPanel=null,detailTrigger=null,listRequestId=0,detailHistoryActive=false,stories=[],storyGroup="edge",storyLoaded=false,storyTrigger=null,storyHistoryActive=false,quickTrigger=null,quickRows=[];
+    let currentRows=[],currentVisibleCount=0,listExtras=new Map(),activeCategoryId=null,currentNoteGroups={},currentRelationGroups={},currentDialogues=[],currentExpressionId=null,currentDetailRow=null,currentBaseForm=null,detailStack=[],pendingDetailPanel=null,detailTrigger=null,listRequestId=0,detailHistoryActive=false,stories=[],storyGroup="dialogue",storyLoaded=false,storyTrigger=null,storyHistoryActive=false,quickTrigger=null,quickRows=[];
     let recentRows=readStoredRows(RECENT_STORAGE_KEY),reviewRows=readStoredRows(REVIEW_STORAGE_KEY),favoriteRows=readStoredRows(FAVORITE_STORAGE_KEY),learningMode="recent",reviewSession=null;
 
     function setStatus(message,isError=false){statusBox.hidden=!message;statusBox.textContent=message||"";statusBox.classList.toggle("error",isError)}
