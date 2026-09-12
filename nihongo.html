@@ -86,7 +86,7 @@
     .home-text-link{display:block;width:100%;min-height:24px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.home-preview-empty{font-size:12px;line-height:1.45;word-break:keep-all}
     .category-toggle{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0;border:0;background:transparent;color:inherit;font-size:inherit;font-weight:800;cursor:pointer}.category-toggle .category-arrow{display:inline-block;color:#a36678;transition:transform .15s}.category-toggle[aria-expanded="false"] .category-arrow{transform:rotate(180deg)}.category-layout[hidden]{display:none!important}.category-panel:has(.category-layout[hidden]) .category-more{visibility:hidden}
     @media(max-width:430px){.home-learning-overview{gap:5px}.home-learning-block{display:flex;gap:6px;min-height:184px;padding:7px}.home-learning-heading{display:flex;min-height:115px}.home-learning-heading img{width:80px;height:80px;border-radius:10px}.home-learning-heading strong{font-size:clamp(11px,3.1vw,12px)}.home-learning-heading small{top:28px;right:0;min-width:30px;padding:2px 4px;border-radius:99px;background:rgba(255,255,255,.92);font-size:25px}.home-learning-heading small::after{display:none}.home-text-link{font-size:11px}.home-preview-empty{font-size:11px}}
-    .detail-main::before{width:88px;height:83px;right:18px;bottom:9px;border-radius:12px;background-image:url('./mockup-detail-rabbit.png');background-size:contain;opacity:1}
+    .detail-main::before{width:88px;height:83px;right:18px;bottom:9px;border-radius:12px;background-image:var(--detail-art-image,url('./mockup-detail-rabbit.png'));background-size:var(--detail-art-size,contain);background-position:var(--detail-art-position,center);background-color:#fff2f3;clip-path:inset(1px round 12px);opacity:1}
     @media(max-width:430px){.detail-main::before{width:60px;height:57px;right:15px;top:15px}.detail-meaning,.detail-pron{padding-right:61px}}
   </style>
 </head>
@@ -265,16 +265,27 @@
       "달력·시점","신체","과일","욕·비속어","꽃·나무"
     ];
     const categoryArt=document.getElementById("categoryArt");
-    function updateCategoryArt(name){
+    const detailMain=document.querySelector(".detail-main");
+    function categoryVisual(name){
+      if(name==="식사·식사시간")return {image:"url('./category-rabbit-bowl-v2.png')",size:"contain",position:"center"};
       const sheet=categoryScenesA.includes(name)?"a":categoryScenesB.includes(name)?"b":null;
-      if(!sheet){categoryArt.style.backgroundImage="url('./category-rabbit-upper-v2.png')";categoryArt.style.backgroundSize="contain";categoryArt.style.backgroundPosition="center";categoryArt.setAttribute("aria-label","포크와 음식 그릇을 든 토끼");return}
+      if(!sheet)return null;
       const columns=5,rows=sheet==="a"?4:3;
       const index=(sheet==="a"?categoryScenesA:categoryScenesB).indexOf(name);
-      const column=index%columns,row=Math.floor(index/columns);
-      categoryArt.style.backgroundImage=`url('./category-rabbits-${sheet}.webp')`;
-      categoryArt.style.backgroundSize=`${columns*100}% ${rows*100}%`;
-      categoryArt.style.backgroundPosition=`${column*100/(columns-1)}% ${row*100/(rows-1)}%`;
-      categoryArt.setAttribute("aria-label",`${name} 카테고리의 토끼 그림`);
+      return {image:`url('./category-rabbits-${sheet}.webp')`,size:`${columns*100}% ${rows*100}%`,position:`${index%columns*100/(columns-1)}% ${Math.floor(index/columns)*100/(rows-1)}%`};
+    }
+    function updateCategoryArt(name){
+      const visual=categoryVisual(name);
+      categoryArt.style.backgroundImage=visual?.image||"url('./category-rabbit-upper-v2.png')";
+      categoryArt.style.backgroundSize=visual?.size||"contain";
+      categoryArt.style.backgroundPosition=visual?.position||"center";
+      categoryArt.setAttribute("aria-label",visual?`${name} 카테고리의 토끼 그림`:"포크와 음식 그릇을 든 토끼");
+    }
+    function updateDetailArt(name){
+      const visual=categoryVisual(name);
+      detailMain.style.setProperty("--detail-art-image",visual?.image||"url('./mockup-detail-rabbit.png')");
+      detailMain.style.setProperty("--detail-art-size",visual?.size||"contain");
+      detailMain.style.setProperty("--detail-art-position",visual?.position||"center");
     }
     const featuredCategoryNames=["장소","식사·식사시간","방향·위치","쇼핑 회화","병원·진료","시간·분","날짜·일수","사람 수·수량"];
     function categoryPriority(name){const index=featuredCategoryNames.findIndex(value=>String(name).startsWith(value));return index<0?featuredCategoryNames.length:index}
@@ -307,7 +318,7 @@
       try{const links=await apiGet(`expression_category?select=id,expression_id&category_id=eq.${activeCategoryId}&order=id.asc&limit=200`);if(requestId!==listRequestId)return;const ids=[...new Set(links.map(x=>x.expression_id))];if(!ids.length){renderResults([]);setStatus(`${statusPrefix}0개 결과`);return}
         const idList=ids.join(",");const [exprs,meanings]=await Promise.all([apiGet(`expression?select=id,display_pronunciation&id=in.(${idList})&status=eq.ACTIVE`),apiGet(`expression_meaning?select=expression_id,meaning_text,is_primary&expression_id=in.(${idList})&is_primary=eq.true`)]);if(requestId!==listRequestId)return;const m=new Map(meanings.map(x=>[x.expression_id,x.meaning_text]));const e=new Map(exprs.map(x=>[x.id,x]));const rows=ids.map(id=>e.get(id)).filter(Boolean).map(x=>({expression_id:x.id,meaning_text:m.get(x.id)||"",display_pronunciation:x.display_pronunciation,match_type:""})).slice(0,80);await loadListExtras(rows,requestId);if(requestId!==listRequestId)return;renderResults(rows);setStatus(`${statusPrefix}${rows.length}개 결과`)}catch(error){console.error(error);if(requestId===listRequestId)setStatus("카테고리를 불러오지 못했습니다.",true)}finally{if(requestId===listRequestId)setLoading(false)}}
 
-    async function openDetail(row,options={}){dismissQuickPopover(false);dismissRelationPopover(false);if(sheetBackdrop.hidden){detailTrigger=document.activeElement;history.pushState({...history.state,kimtokkiDetail:true},"");detailHistoryActive=true}else if(options.push!==false&&currentDetailRow&&Number(currentDetailRow.expression_id)!==Number(row.expression_id))detailStack.push(currentDetailRow);currentDetailRow={...row};recordRecent(currentDetailRow);setReviewButton(detailReviewBtn,currentDetailRow.expression_id);setFavoriteButton(detailFavoriteBtn,currentDetailRow.expression_id);pendingDetailPanel=options.panel||null;detailBackBtn.hidden=!detailStack.length;currentExpressionId=Number(row.expression_id);currentBaseForm=null;sheet.scrollTop=0;detailMeaning.textContent=row.meaning_text||"";detailPron.textContent=row.display_pronunciation||"";altMeanings.textContent="";baseFormLink.innerHTML="";baseFormLink.hidden=true;actionRow.innerHTML="";actionRow.hidden=true;categoryTags.innerHTML="";categoryTags.hidden=true;detailEmpty.hidden=true;notePanel.innerHTML="";notePanel.hidden=true;relationPanel.innerHTML="";relationPanel.hidden=true;dialoguePanel.innerHTML="";dialoguePanel.hidden=true;currentNoteGroups={};currentRelationGroups={};currentDialogues=[];sheetBackdrop.hidden=false;app.inert=true;document.body.style.overflow="hidden";closeSheet.focus({preventScroll:true});
+    async function openDetail(row,options={}){dismissQuickPopover(false);dismissRelationPopover(false);if(sheetBackdrop.hidden){detailTrigger=document.activeElement;history.pushState({...history.state,kimtokkiDetail:true},"");detailHistoryActive=true}else if(options.push!==false&&currentDetailRow&&Number(currentDetailRow.expression_id)!==Number(row.expression_id))detailStack.push(currentDetailRow);currentDetailRow={...row};recordRecent(currentDetailRow);setReviewButton(detailReviewBtn,currentDetailRow.expression_id);setFavoriteButton(detailFavoriteBtn,currentDetailRow.expression_id);pendingDetailPanel=options.panel||null;detailBackBtn.hidden=!detailStack.length;currentExpressionId=Number(row.expression_id);currentBaseForm=null;sheet.scrollTop=0;detailMeaning.textContent=row.meaning_text||"";detailPron.textContent=row.display_pronunciation||"";altMeanings.textContent="";baseFormLink.innerHTML="";baseFormLink.hidden=true;actionRow.innerHTML="";actionRow.hidden=true;categoryTags.innerHTML="";categoryTags.hidden=true;detailEmpty.hidden=true;notePanel.innerHTML="";notePanel.hidden=true;relationPanel.innerHTML="";relationPanel.hidden=true;dialoguePanel.innerHTML="";dialoguePanel.hidden=true;currentNoteGroups={};currentRelationGroups={};currentDialogues=[];updateDetailArt(null);sheetBackdrop.hidden=false;app.inert=true;document.body.style.overflow="hidden";closeSheet.focus({preventScroll:true});
       try{const id=currentExpressionId;const [meanings,notes,rels,cats,dias]=await Promise.all([
           apiGet(`expression_meaning?select=meaning_text,meaning_order,is_primary&expression_id=eq.${id}&order=meaning_order.asc`),
           apiGet(`note?select=id,note_type,note_text,display_order&expression_id=eq.${id}&note_type=in.(EXAMPLE,HINT,REFERENCE)&order=display_order.asc.nullslast,id.asc`).catch(error=>{console.warn("notes skipped",error);return []}),
@@ -318,7 +329,7 @@
         if(currentExpressionId!==id||sheetBackdrop.hidden)return;
         const others=meanings.filter(x=>!x.is_primary).map(x=>x.meaning_text);altMeanings.textContent=others.length?others.join(" · "):"";
         if(notes.length)prepareNotes(notes);
-        if(cats.length){const ids=[...new Set(cats.map(x=>x.category_id))].join(",");const rows=await apiGet(`category?select=id,name,display_order&status=eq.ACTIVE&id=in.(${ids})&order=display_order.asc.nullslast,name.asc`);if(currentExpressionId!==id||sheetBackdrop.hidden)return;if(rows.length){categoryTags.innerHTML=rows.map(x=>`<button class="tag" type="button" data-category-id="${x.id}">${escapeHtml(x.name)}</button>`).join("");categoryTags.hidden=false}}
+        if(cats.length){const ids=[...new Set(cats.map(x=>x.category_id))].join(",");const rows=await apiGet(`category?select=id,name,display_order&status=eq.ACTIVE&id=in.(${ids})&order=display_order.asc.nullslast,name.asc`);if(currentExpressionId!==id||sheetBackdrop.hidden)return;if(rows.length){const visualCategory=rows.find(x=>Number(x.id)===activeCategoryId&&categoryVisual(x.name))||rows.find(x=>categoryVisual(x.name));updateDetailArt(visualCategory?.name);categoryTags.innerHTML=rows.map(x=>`<button class="tag" type="button" data-category-id="${x.id}">${escapeHtml(x.name)}</button>`).join("");categoryTags.hidden=false}}
         if(rels.length)await prepareRelations(id,rels);
         if(dias.length)await prepareDialogues(id,dias);
         if(currentExpressionId===id&&!sheetBackdrop.hidden){detailEmpty.hidden=true;const panel=pendingDetailPanel;pendingDetailPanel=null;if(panel==="DIALOGUE"&&currentDialogues.length)showDialogues();else if(currentRelationGroups[panel]?.length)showRelation(panel);else if(currentNoteGroups[panel]?.length)showNotes(panel)}

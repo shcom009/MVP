@@ -64,8 +64,17 @@ test('35개 카테고리에 각각의 토끼 그림이 연결되고 기본 화�
   assert.equal(new Set(names).size, 35);
   for(const sheet of ['a','b']) assert.ok(statSync(new URL(`../category-rabbits-${sheet}.webp`, import.meta.url)).size > 100000);
   assert.match(script, /function updateCategoryArt\(name\)/);
-  assert.match(script, /categoryArt\.style\.backgroundImage=`url\('\.\/category-rabbits-\$\{sheet\}\.webp'\)`/);
+  assert.match(script, /if\(name==="식사·식사시간"\)return \{image:"url\('\.\/category-rabbit-bowl-v2\.png'\)",size:"contain"/);
+  assert.match(script, /image:`url\('\.\/category-rabbits-\$\{sheet\}\.webp'\)`/);
   assert.match(script, /categoryArt\.style\.backgroundPosition=/);
+  assert.match(script, /function updateDetailArt\(name\)/);
+  assert.match(script, /updateDetailArt\(visualCategory\?\.name\)/);
+  const visualFunction = script.match(/function categoryVisual\(name\)\{[\s\S]*?\n    \}/)?.[0];
+  assert.ok(visualFunction);
+  const context = {categoryScenesA:names.slice(0,20), categoryScenesB:names.slice(20)};
+  vm.runInNewContext(`${visualFunction};this.visual=categoryVisual`, context);
+  assert.equal(new Set(names.map(name => JSON.stringify(context.visual(name)))).size, 35);
+  assert.equal(context.visual('식사·식사시간').size, 'contain');
   assert.match(script, /updateCategoryArt\(categoryName\)/);
   assert.match(script, /updateCategoryArt\(null\)/);
 });
