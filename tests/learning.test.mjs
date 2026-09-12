@@ -225,19 +225,30 @@ test('복습 체크와 즐겨찾기는 충분한 터치 영역을 갖고 작은 
   assert.ok(mobile?.includes('.detail-main>.review-toggle,.detail-main>.favorite-toggle{top:auto;bottom:10px}'));
 });
 
-test('Story 탭은 기존 순서를 지키고 카시를 추가하며 주제별이 처음 열린다', () => {
+test('Story 탭은 주제별·카시·엣지·기타 순서이고 엣지는 19금 안내 뒤 열린다', () => {
   const tabs = html.match(/<div id="storyTabs" class="story-tabs">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(tabs);
   const buttons = [...tabs.matchAll(/<button class="story-tab( active)?"[^>]*data-story-group="([^"]+)">([^<]+)<\/button>/g)]
     .map(([, active, group, label]) => ({ active: Boolean(active), group, label }));
   assert.deepEqual(buttons, [
     { active: true, group: 'dialogue', label: '주제별' },
+    { active: false, group: 'kashi', label: '카시' },
     { active: false, group: 'edge', label: '엣지' },
-    { active: false, group: 'other', label: '기타' },
-    { active: false, group: 'kashi', label: '카시' }
+    { active: false, group: 'other', label: '기타' }
   ]);
   assert.match(script, /storyGroup="dialogue"/);
   assert.match(script, /if\(story\.story_only\)return "edge"/);
+  assert.match(html, /id="edgeWarningTitle">19금<\/h2>/);
+  assert.match(html, /story-edge-warning-rabbit\.webp/);
+  assert.ok(statSync(new URL('../story-edge-warning-rabbit.webp', import.meta.url)).size > 5000);
+  assert.match(script, /if\(tab\.dataset\.storyGroup==="edge"\)\{showEdgeWarning\(\);return\}/);
+  const source = ['showEdgeWarning','closeEdgeWarning'].map(name=>script.split('\n').find(line=>line.trimStart().startsWith(`function ${name}(`))).join('\n');
+  const context = {edgeWarning:{hidden:true},edgeWarningCancel:{focus(){}},storyTabs:{querySelector(){return {focus(){}}}},storySheet:{scrollTop:20},storyGroup:'kashi',paintStories(){}};
+  vm.runInNewContext(`${source};this.open=showEdgeWarning;this.close=closeEdgeWarning`,context);
+  context.open();assert.equal(context.edgeWarning.hidden,false);
+  context.close();assert.equal(context.storyGroup,'kashi');
+  context.open();context.close(true);assert.equal(context.storyGroup,'edge');
+  assert.equal(context.storySheet.scrollTop,0);
 });
 
 test('카시 검색은 선별된 가사 구절만 원본 노래에 연결한다', () => {
@@ -331,7 +342,7 @@ test('기기 뒤로가기는 Story 본문→목록→닫기 순서로 이동하�
   } };
   const storyBackdrop = { hidden: true };
   context = vm.createContext({
-    history, storyBackdrop, storySheet, storyList,
+    history, storyBackdrop, storySheet, storyList, edgeWarning: { hidden: true },
     storyReader: { hidden: true, textContent: '' }, storyBackBtn: { hidden: true, focus() {} },
     storyHeading: { textContent: '' }, storyTabs: { hidden: false }, storyCloseBtn: { focus() {} },
     storyLoaded: true, paintStories() {}, dismissQuickPopover() {}, app: { inert: false },
