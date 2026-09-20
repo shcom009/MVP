@@ -42,6 +42,9 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /categoryStrip\.classList\.toggle\("expanded"\)/);
   assert.match(html, /id="detailReviewBtn"/);
   assert.match(html, /id="detailFavoriteBtn"/);
+  assert.match(html, /id="usageNote" class="usage-note" hidden/);
+  assert.match(script, /select=meaning_text,meaning_order,is_primary,usage_note/);
+  assert.match(script, /usageNote\.textContent=usageNotes\.join\("\\n"\)/);
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
 });
 
