@@ -48,6 +48,16 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
 });
 
+test('검색 결과 위에서 전체 데이터의 연관 그룹을 팝오버로 탐색한다', () => {
+  assert.match(html, /class="primary-context" data-result-index="0"/);
+  assert.match(script, /rpc\("get_learning_associations",\{p_expression_ids:ids,p_limit_per_group:32\}\)/);
+  assert.match(script, /chipHtml\("association",key,group\.label,group\.rows\.length\)/);
+  assert.match(script, /function prepareLearningAssociations\(items\)/);
+  assert.match(script, /function associationRowKey\(row\)/);
+  assert.match(script, /currentRelationLabels\[key\]=groups\[key\]\.label/);
+  assert.match(script, /openDetail\(target\)/);
+});
+
 test('가로 3개 학습 영역과 카테고리 접기·펼치기가 기존 연결을 유지한다', () => {
   assert.match(html, /\.home-learning-overview\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(script, /function renderHomeLearning\(\)[^\n]*\.slice\(0,3\)/);
