@@ -65,6 +65,15 @@ test('검색 결과 위에서 전체 데이터의 연관 그룹을 팝오버로 
   assert.match(script, /openDetail\(target\)/);
 });
 
+test('모바일 카테고리는 한 줄 칩을 유지하고 연관 팝오버를 즉시 닫을 수 있다', () => {
+  assert.match(html, /\.category-strip \.category-chip\{[^}]*white-space:nowrap/);
+  assert.match(html, /@media\(max-width:430px\)\{\.category-layout,\.category-layout:has\(\.category-strip\.expanded\)\{grid-template-columns:minmax\(0,1fr\) 88px/);
+  assert.match(html, /@media\(max-width:360px\)\{\.category-strip,\.category-strip\.expanded\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(html, /class="quick-popover-close"[^>]*aria-label="팝오버 닫기"/);
+  assert.match(html, /\.quick-popover-close\{[^}]*width:44px;height:44px/);
+  assert.match(script, /closest\("\.quick-popover-close"\)\)\{dismissQuickPopover\(\);return\}/);
+});
+
 test('활용·비슷반대 표현은 기본형과 짧은 핵심 표현을 먼저 보여 준다', () => {
   const names = ['normalizeSearchText', 'sortRelationRows'];
   const sources = names.map(name => {
