@@ -58,8 +58,9 @@ test('검색 결과 위에서 전체 데이터의 연관 그룹을 팝오버로 
   assert.match(script, /collapseAssociationGroups\(extra\.associations\)/);
   assert.match(script, /key=`\$\{item\.group_type\}:\$\{item\.group_id\}`/);
   assert.match(script, /key=`ASSOC:\$\{item\.group_type\}:\$\{item\.group_id\}`/);
-  assert.match(script, /group\.suppressed=true/);
-  assert.match(script, /group\.rows\.length&&!group\.suppressed/);
+  assert.doesNotMatch(script, /group\.suppressed=true/);
+  assert.doesNotMatch(script, /namedTargets|namedKeys/);
+  assert.match(script, /group\.rows\.length/);
   assert.match(script, /currentRelationLabels\[key\]=groups\[key\]\.label/);
   assert.match(script, /openDetail\(target\)/);
 });
