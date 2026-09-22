@@ -281,6 +281,28 @@ test('복습 체크와 즐겨찾기는 충분한 터치 영역을 갖고 작은 
   assert.ok(mobile?.includes('.detail-main>.review-toggle,.detail-main>.favorite-toggle{top:auto;bottom:10px}'));
 });
 
+test('모바일 안전영역·동적 화면 높이·팝오버 재배치를 적용한다', () => {
+  assert.match(html, /viewport-fit=cover/);
+  assert.match(html, /min-height:100dvh/);
+  assert.match(html, /padding:max\(22px,env\(safe-area-inset-top\)\) 18px calc\(48px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(html, /max-height:min\(88dvh,800px\)/);
+  assert.match(html, /button\{touch-action:manipulation/);
+  assert.match(html, /\.brand \.menu-open\{width:44px;height:44px\}/);
+  assert.match(html, /\.brand \.story-open\{min-height:44px/);
+  assert.match(script, /window\.visualViewport\?\.addEventListener\("resize",repositionOpenPopovers/);
+  const source = script.split('\n').find(value => value.trimStart().startsWith('function positionPopover('));
+  assert.ok(source, 'positionPopover exists');
+  const context = vm.createContext({
+    window: { innerWidth: 1000, innerHeight: 800, visualViewport: { offsetLeft: 10, offsetTop: 20, width: 320, height: 600 } }
+  });
+  vm.runInContext(`${source};this.position=positionPopover`, context);
+  const popover = { style: {}, getBoundingClientRect: () => ({ width: 280, height: 300 }) };
+  const trigger = { isConnected: true, getBoundingClientRect: () => ({ left: 300, bottom: 580 }) };
+  context.position(popover, trigger);
+  assert.equal(popover.style.left, '34px');
+  assert.equal(popover.style.top, '304px');
+});
+
 test('Story 탭은 주제별·카시·엣지·기타 순서이고 엣지는 19금 안내 뒤 열린다', () => {
   const tabs = html.match(/<div id="storyTabs" class="story-tabs">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(tabs);
