@@ -65,6 +65,27 @@ test('검색 결과 위에서 전체 데이터의 연관 그룹을 팝오버로 
   assert.match(script, /openDetail\(target\)/);
 });
 
+test('활용·비슷반대 표현은 기본형과 짧은 핵심 표현을 먼저 보여 준다', () => {
+  const names = ['normalizeSearchText', 'sortRelationRows'];
+  const sources = names.map(name => {
+    const line = script.split('\n').find(value => value.trimStart().startsWith(`function ${name}(`));
+    assert.ok(line, `${name} exists`);
+    return line;
+  }).join('\n');
+  const context = vm.createContext({});
+  vm.runInContext(`${sources};this.sortRows=sortRelationRows`, context);
+  const rows = [
+    { expression_id: 4, display_pronunciation: '이마마데 오세와니 나리마시타', display_order: 1 },
+    { expression_id: 3, display_pronunciation: '나리마스', display_order: 3 },
+    { expression_id: 2, display_pronunciation: '나레', display_order: 9 },
+    { expression_id: 1, display_pronunciation: '나루', display_order: 99, is_base_target: true }
+  ];
+  assert.deepEqual(Array.from(context.sortRows(rows), row => row.expression_id), [1, 2, 3, 4]);
+  assert.match(script, /select=id,from_expression_id,to_expression_id,relation_type,relation_subtype,display_order/);
+  assert.match(script, /sortRelationRows\(group\)/);
+  assert.match(script, /usable\[type\]=sortRelationRows/);
+});
+
 test('가로 3개 학습 영역과 카테고리 접기·펼치기가 기존 연결을 유지한다', () => {
   assert.match(html, /\.home-learning-overview\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(script, /function renderHomeLearning\(\)[^\n]*\.slice\(0,3\)/);
