@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "queryLimit": 20,
+  "associationLimit": 32,
+  "warnRequestMs": 3000,
+  "maxRequestMs": 10000,
+  "forbiddenAssociationLabels": ["연관"],
+  "cases": [
+    {
+      "query": "오바상",
+      "minResults": 1,
+      "maxResults": 3,
+      "top": {"meaning": "고모 이모 아줌마", "pronunciation": "오바상", "matchType": "PRON_EXACT"},
+      "associations": [
+        {"anchor": {"meaning": "고모 이모 아줌마", "pronunciation": "오바상"}, "label": "호칭", "requiredMembers": [{"pronunciation": "오지상"}, {"pronunciation": "오바-상"}]}
+      ]
+    },
+    {
+      "query": "괴물",
+      "minResults": 1,
+      "maxResults": 3,
+      "top": {"meaning": "괴물", "pronunciation": "카이부츠", "matchType": "MEANING_EXACT"},
+      "associations": [
+        {"anchor": {"meaning": "괴물", "pronunciation": "카이부츠"}, "label": "괴물·요괴", "requiredMembers": [{"pronunciation": "오니"}, {"pronunciation": "모노노케"}, {"pronunciation": "바케모노"}]}
+      ]
+    },
+    {
+      "query": "오니",
+      "minResults": 1,
+      "maxResults": 3,
+      "top": {"meaning": "귀신", "pronunciation": "오니", "matchType": "PRON_EXACT"},
+      "associations": [
+        {"anchor": {"meaning": "귀신", "pronunciation": "오니"}, "label": "괴물·요괴", "requiredMembers": [{"pronunciation": "카이부츠"}]}
+      ]
+    },
+    {
+      "query": "지칸",
+      "minResults": 1,
+      "maxResults": 3,
+      "top": {"meaning": "시간", "pronunciation": "지칸", "matchType": "PRON_EXACT"},
+      "associations": [
+        {"anchor": {"meaning": "시간", "pronunciation": "지칸"}, "label": "시간", "requiredMembers": [{"pronunciation": "고젠"}, {"pronunciation": "고고"}]}
+      ]
+    },
+    {
+      "query": "아이쇼",
+      "minResults": 6,
+      "maxResults": 15,
+      "top": {"meaning": "궁합·상성", "pronunciation": "아이쇼오", "matchType": "PRON_EXACT"},
+      "requiredResults": [{"pronunciation": "아이쇼오가 이이"}, {"pronunciation": "아이쇼가 스고쿠 이이"}],
+      "associations": [
+        {"anchor": {"meaning": "궁합·상성", "pronunciation": "아이쇼오"}, "label": "아이쇼·궁합", "requiredMembers": [{"pronunciation": "아이쇼오가 이이"}, {"pronunciation": "아이쇼가 스고쿠 이이"}]}
+      ]
+    },
+    {
+      "query": "토모다치",
+      "minResults": 10,
+      "maxResults": 20,
+      "top": {"meaning": "친구", "pronunciation": "토모다치", "matchType": "PRON_EXACT"},
+      "requiredResults": [{"pronunciation": "토모다치 데스"}],
+      "associations": [
+        {"anchor": {"meaning": "친구", "pronunciation": "토모다치"}, "label": "친구 표현", "requiredMembers": [{"pronunciation": "유우진"}, {"pronunciation": "나카마"}, {"pronunciation": "신유우"}]},
+        {"anchor": {"meaning": "친구", "pronunciation": "토모다치"}, "label": "토모다치 데스·친구입니다", "requiredMembers": [{"pronunciation": "토모다치 데스"}]}
+      ]
+    },
+    {
+      "query": "히로우",
+      "minResults": 1,
+      "maxResults": 4,
+      "top": {"meaning": "줍다", "pronunciation": "히로우", "matchType": "PRON_EXACT"},
+      "associations": [
+        {"anchor": {"meaning": "줍다", "pronunciation": "히로우"}, "label": "줍다·버리다", "requiredMembers": [{"meaning": "버리다", "pronunciation": "스테루"}]}
+      ]
+    },
+    {
+      "query": "키쿠",
+      "minResults": 2,
+      "maxResults": 4,
+      "top": {"meaning": "소리를 듣다", "pronunciation": "키쿠", "matchType": "PRON_EXACT"},
+      "requiredResults": [{"meaning": "효과가 있다", "pronunciation": "키쿠"}],
+      "associations": [
+        {"anchor": {"meaning": "소리를 듣다", "pronunciation": "키쿠"}, "label": "키쿠·듣다/효과", "requiredMembers": [{"meaning": "효과가 있다", "pronunciation": "키쿠"}]},
+        {"anchor": {"meaning": "소리를 듣다", "pronunciation": "키쿠"}, "label": "키쿠·소리를 듣다", "requiredMembers": [{"pronunciation": "키이타"}]},
+        {"anchor": {"meaning": "효과가 있다", "pronunciation": "키쿠"}, "label": "키쿠·듣다/효과", "requiredMembers": [{"meaning": "소리를 듣다", "pronunciation": "키쿠"}]}
+      ]
+    }
+  ]
+}

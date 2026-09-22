@@ -1,0 +1,26 @@
+name: Search regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/run-search-regression.mjs'
+      - 'tests/search-regression-cases.json'
+      - 'tests/search-regression.test.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/search-regression.test.mjs
+      - run: node scripts/run-search-regression.mjs
