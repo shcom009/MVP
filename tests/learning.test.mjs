@@ -48,10 +48,15 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
 });
 
-test('검색 결과 위에서 전체 데이터의 연관 그룹을 팝오버로 탐색한다', () => {
-  assert.match(html, /class="primary-context" data-result-index="0"/);
+test('검색 결과 그리드의 모든 카드에서 연관 그룹을 바로 탐색한다', () => {
+  assert.match(html, /\.results\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(html, /\.result-main::after\{display:none;content:none\}/);
   assert.match(script, /rpc\("get_learning_associations",\{p_expression_ids:ids,p_limit_per_group:32\}\)/);
   assert.match(script, /chipHtml\("association",key,group\.label,group\.rows\.length\)/);
+  assert.match(script, /chips\.push\(\.\.\.associationChips\(extra\)\)/);
+  const painter=script.split('\n').find(line=>line.trimStart().startsWith('function paintResults('));
+  assert.ok(painter);
+  assert.doesNotMatch(painter, /review-toggle|favorite-toggle|primary-context/);
   assert.match(script, /function prepareLearningAssociations\(items\)/);
   assert.match(script, /function associationRowKey\(row\)/);
   assert.match(script, /function collapseAssociationGroups\(groups\)/);
@@ -288,14 +293,14 @@ test('화면에 즐겨찾기 버튼과 메뉴가 존재한다', () => {
   assert.match(html, /favoriteButton\)\{toggleFavorite\(currentRows\[index\]\)/);
 });
 
-test('복습 체크와 즐겨찾기는 충분한 터치 영역을 갖고 작은 화면에서 본문과 분리된다', () => {
+test('검색 카드에서는 등록 버튼을 제거하고 상세 화면의 기존 학습 기능은 보존한다', () => {
   const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)') && line.includes('.result{padding-bottom:56px}'));
   assert.ok(html.includes('width:44px;height:44px'), '44px buttons');
   assert.ok(html.includes('.review-toggle::before{content:"+"'), 'unselected review icon');
   assert.ok(html.includes('.review-toggle.active::before{content:"✓"'), 'selected review icon');
-  assert.ok(mobile?.includes('.result{padding-bottom:56px}'), 'separate action area');
-  assert.ok(mobile?.includes('.result>.review-toggle,.result>.favorite-toggle{top:auto;bottom:8px}'));
   assert.ok(mobile?.includes('.detail-main>.review-toggle,.detail-main>.favorite-toggle{top:auto;bottom:10px}'));
+  const painter=script.split('\n').find(line=>line.trimStart().startsWith('function paintResults('));
+  assert.doesNotMatch(painter, /review-toggle|favorite-toggle/);
 });
 
 test('모바일 안전영역·동적 화면 높이·팝오버 재배치를 적용한다', () => {
