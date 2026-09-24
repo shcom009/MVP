@@ -132,7 +132,6 @@
     function compactRow(row){return {expression_id:Number(row.expression_id),meaning_text:String(row.meaning_text||""),display_pronunciation:String(row.display_pronunciation||""),japanese_original:String(row.japanese_original||"")}}
     function uniqueRows(rows,currentId=0){const ids=new Set(),keys=new Set();return rows.map(compactRow).filter(row=>{if(!row.expression_id||row.expression_id===Number(currentId)||!row.display_pronunciation)return false;const key=rowKey(row);if(ids.has(row.expression_id)||keys.has(key))return false;ids.add(row.expression_id);keys.add(key);return true})}
     function rankSearchRows(rows,query){const q=normalizeSearchText(query);return rows.map((row,index)=>{const pron=normalizeSearchText(row.display_pronunciation),meaningParts=String(row.meaning_text??"").split(/[,/·\n]/).map(normalizeSearchText).filter(Boolean);const exactPron=Boolean(q&&pron===q),exactMeaning=Boolean(q&&meaningParts.includes(q));let rank=4;if(exactPron)rank=0;else if(exactMeaning)rank=1;else if(q&&pron.startsWith(q))rank=2;else if(q&&pron.includes(q))rank=3;return {...row,_rank:rank,_index:index}}).sort((a,b)=>a._rank-b._rank||a._index-b._index)}
-    async function apiGet(path){const response=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{headers:API_HEADERS});if(!response.ok)throw new Error(`HTTP ${response.status}: ${await response.text()}`);return response.json()}
     async function rpc(name,body){const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`,{method:"POST",headers:{...API_HEADERS,"Content-Type":"application/json"},body:JSON.stringify(body)});if(!response.ok)throw new Error(`HTTP ${response.status}: ${await response.text()}`);return response.json()}
     function setLoading(on){loading.hidden=!on;searchBtn.disabled=on;hub.setAttribute("aria-busy",String(on))}
     function setStatus(message,isError=false){statusBox.textContent=message||"";statusBox.classList.toggle("error",isError)}
@@ -144,54 +143,38 @@
     function groupHtml(label,rows,badge="연결"){if(!rows.length)return "";return `<section class="group"><div class="group-head"><strong>${escapeHtml(label)}</strong><span>${rows.length}개</span></div>${rows.map(row=>rowHtml(row,row.form_label||badge)).join("")}</section>`}
     function emptyHtml(message){return `<div class="empty">${escapeHtml(message)}</div>`}
 
-    async function resolveExpressionRows(ids){const unique=[...new Set(ids.map(Number).filter(Boolean))];if(!unique.length)return [];const list=unique.join(","),[expressions,meanings]=await Promise.all([apiGet(`expression?select=id,display_pronunciation,japanese_original&id=in.(${list})&status=eq.ACTIVE`),apiGet(`expression_meaning?select=expression_id,meaning_text&expression_id=in.(${list})&is_primary=eq.true`)]),meaningMap=new Map(meanings.map(row=>[Number(row.expression_id),row.meaning_text]));return expressions.map(row=>({expression_id:Number(row.id),meaning_text:meaningMap.get(Number(row.id))||"",display_pronunciation:row.display_pronunciation||"",japanese_original:row.japanese_original||""}))}
-
-    function relationTargetId(relation,currentId){return Number(relation.from_expression_id)===Number(currentId)?Number(relation.to_expression_id):Number(relation.from_expression_id)}
     async function loadFocusData(row,token){
       const id=Number(row.expression_id);
-      const [expressionRows,associations,relations,notes,categoryLinks,dialogueLinks,focusSources]=await Promise.all([
-        apiGet(`expression?select=id,display_pronunciation,japanese_original&id=eq.${id}&status=eq.ACTIVE`),
-        rpc("get_learning_associations",{p_expression_ids:[id],p_limit_per_group:64}).catch(()=>[]),
-        apiGet(`expression_relation?select=from_expression_id,to_expression_id,relation_type,relation_subtype,display_order&or=(from_expression_id.eq.${id},to_expression_id.eq.${id})&order=display_order.asc.nullslast`).catch(()=>[]),
-        apiGet(`note?select=note_type,note_text,display_order&expression_id=eq.${id}&note_type=in.(EXAMPLE,HINT,REFERENCE)&order=display_order.asc.nullslast`).catch(()=>[]),
-        apiGet(`expression_category?select=category_id&expression_id=eq.${id}`).catch(()=>[]),
-        apiGet(`dialogue_expression?select=dialogue_line_id&expression_id=eq.${id}&limit=20`).catch(()=>[]),
+      const [hubRows,focusSources]=await Promise.all([
+        rpc("get_expression_hub",{p_expression_id:id,p_limit_per_group:32}),
         rpc("search_source_memos",{p_query:row.display_pronunciation,p_limit:8}).catch(()=>[])
       ]);
       if(token!==requestId)return null;
-      const expression=expressionRows[0]||{},associationGroups=new Map(),sourceAssociations=[];
-      for(const item of associations){
-        const candidate={expression_id:Number(item.target_expression_id),meaning_text:item.meaning_text||"",display_pronunciation:item.display_pronunciation||"",form_label:Number(item.association_level)>=3?"관련":""};
+      const self=hubRows.find(item=>item.item_kind==="SELF")||{},expression={...row,meaning_text:self.meaning_text||row.meaning_text,display_pronunciation:self.display_pronunciation||row.display_pronunciation,japanese_original:self.japanese_original||row.japanese_original||""};
+      const associationGroups=new Map(),relationGroups=new Map(),categoryGroups=new Map(),dialogueGroups=new Map(),sourceAssociations=[],notes=[];
+      for(const item of hubRows){
+        if(item.item_kind==="NOTE"){notes.push({note_type:item.group_type,note_text:item.content_text||""});continue}
+        if(item.item_kind==="DIALOGUE"){
+          const key=String(item.group_id),dialogue=dialogueGroups.get(key)||{title:item.group_label||"대화",lines:[]};
+          dialogue.lines.push({korean_text:item.content_text||item.meaning_text||"",display_pronunciation:item.display_pronunciation||""});dialogueGroups.set(key,dialogue);continue;
+        }
+        if(!["ASSOCIATION","RELATION","CATEGORY"].includes(item.item_kind))continue;
+        const candidate={expression_id:Number(item.target_expression_id),meaning_text:item.meaning_text||"",display_pronunciation:item.display_pronunciation||"",japanese_original:item.japanese_original||"",form_label:item.group_type==="FORM"?formLabel(item.item_label):Number(item.association_level)>=3?"관련":""};
         if(!candidate.expression_id||candidate.expression_id===id)continue;
         if(String(item.group_type)==="SOURCE_MEMO"){sourceAssociations.push(candidate);continue}
+        if(item.item_kind==="RELATION"){
+          const type=item.group_type||"RELATED",group=relationGroups.get(type)||[];
+          if(!group.some(existing=>existing.expression_id===candidate.expression_id||rowKey(existing)===rowKey(candidate)))group.push(candidate);relationGroups.set(type,group);continue;
+        }
+        if(item.item_kind==="CATEGORY"){
+          const key=String(item.group_id),group=categoryGroups.get(key)||{label:item.group_label||"주제",type:item.group_type||"CATEGORY",rows:[]};
+          if(!group.rows.some(existing=>existing.expression_id===candidate.expression_id||rowKey(existing)===rowKey(candidate)))group.rows.push(candidate);categoryGroups.set(key,group);continue;
+        }
         const key=`${item.group_type}:${item.group_label}`,group=associationGroups.get(key)||{label:item.group_label||"관련 표현",type:item.group_type||"RELATED",rows:[]};
         if(!group.rows.some(existing=>existing.expression_id===candidate.expression_id||rowKey(existing)===rowKey(candidate)))group.rows.push(candidate);
         associationGroups.set(key,group);
       }
-      const relationIds=relations.map(relation=>relationTargetId(relation,id)),relationRows=await resolveExpressionRows(relationIds);
-      if(token!==requestId)return null;
-      const relationMap=new Map(relationRows.map(target=>[target.expression_id,target])),relationGroups=new Map();
-      for(const relation of relations){
-        const targetId=relationTargetId(relation,id),target=relationMap.get(targetId);if(!target)continue;
-        const type=relation.relation_type||"RELATED",group=relationGroups.get(type)||[];
-        if(!group.some(existing=>existing.expression_id===targetId))group.push({...target,form_label:type==="FORM"?formLabel(relation.relation_subtype):""});
-        relationGroups.set(type,group);
-      }
-      let categories=[];
-      if(categoryLinks.length){
-        const ids=[...new Set(categoryLinks.map(item=>Number(item.category_id)))].join(",");
-        categories=await apiGet(`category?select=id,name,category_type&status=eq.ACTIVE&id=in.(${ids})&order=display_order.asc.nullslast`).catch(()=>[]);
-      }
-      let dialogues=[];
-      if(dialogueLinks.length){
-        const lineIds=[...new Set(dialogueLinks.map(item=>Number(item.dialogue_line_id)))],anchors=await apiGet(`dialogue_line?select=id,dialogue_id,line_order&id=in.(${lineIds.join(",")})`).catch(()=>[]);
-        const dialogueIds=[...new Set(anchors.map(item=>Number(item.dialogue_id)))].slice(0,4);
-        if(dialogueIds.length){
-          const ids=dialogueIds.join(","),[heads,lines]=await Promise.all([apiGet(`dialogue?select=id,title,situation&id=in.(${ids})&status=eq.ACTIVE`).catch(()=>[]),apiGet(`dialogue_line?select=id,dialogue_id,line_order,korean_text,display_pronunciation&dialogue_id=in.(${ids})&order=dialogue_id.asc,line_order.asc&limit=200`).catch(()=>[])]);
-          dialogues=heads.map(head=>{const all=lines.filter(line=>Number(line.dialogue_id)===Number(head.id)),anchorOrders=anchors.filter(anchor=>Number(anchor.dialogue_id)===Number(head.id)).map(anchor=>Number(anchor.line_order)),first=anchorOrders.length?Math.max(0,Math.min(...anchorOrders)-2):0,last=anchorOrders.length?Math.max(...anchorOrders)+2:4;return {title:head.title||head.situation||"대화",lines:all.filter(line=>Number(line.line_order)>=first&&Number(line.line_order)<=last)}}).filter(dialogue=>dialogue.lines.length);
-        }
-      }
-      return {expression:{...row,japanese_original:expression.japanese_original||row.japanese_original||""},associationGroups:[...associationGroups.values()],relationGroups,notes,categories,dialogues,sourceAssociations:uniqueRows(sourceAssociations,id),focusSources};
+      return {expression,associationGroups:[...associationGroups.values()],relationGroups,notes,categoryGroups:[...categoryGroups.values()],dialogues:[...dialogueGroups.values()],sourceAssociations:uniqueRows(sourceAssociations,id),focusSources};
     }
 
     function classifyData(data){
@@ -219,11 +202,11 @@
       backBtn.hidden=focusHistory.length<2;
       panels.speak.innerHTML=`<div class="panel-title"><h2>검색·활용</h2><small>표현을 누르면 새 중심으로 이동</small></div>`+classified.speakGroups.map(group=>groupHtml(group.label,group.rows,group.badge)).join("")+(examples.length?`<section class="group"><div class="group-head"><strong>예문·메모</strong><span>${examples.length}개</span></div>${examples.map(item=>noteHtml(item.note_text,"예문")).join("")}</section>`:"")||emptyHtml("연결된 검색 결과나 활용형이 없습니다.");
       panels.meaning.innerHTML=`<div class="panel-title"><h2>뜻으로 이동</h2><small>비슷·반대·관련 의미</small></div>`+classified.meaningGroups.map(group=>groupHtml(group.label,group.rows,group.badge)).join("")+(hints.length?`<section class="group"><div class="group-head"><strong>힌트·참조</strong><span>${hints.length}개</span></div>${hints.map(item=>noteHtml(item.note_text,item.note_type==="HINT"?"힌트":"참조")).join("")}</section>`:"")||emptyHtml("뜻으로 연결된 표현이 없습니다.");
-      panels.scene.innerHTML=`<div class="panel-title"><h2>상황으로 이동</h2><small>주제·상황·대화로 더 멀리 탐색</small></div>`+(data.categories.length?`<div class="doors">${data.categories.map(category=>`<button class="door" type="button" data-category-id="${Number(category.id)}" data-category-name="${escapeHtml(category.name)}"><strong>${escapeHtml(category.name)}</strong><span>${escapeHtml(category.category_type==="SITUATION"?"상황의 다른 표현 보기":"주제의 다른 표현 보기")}</span></button>`).join("")}</div><div id="categoryMembers" class="category-members" hidden></div>`:"")+classified.sceneGroups.map(group=>groupHtml(group.label,group.rows,group.badge)).join("")+data.dialogues.map(dialogue=>`<article class="dialogue"><h3>${escapeHtml(dialogue.title)}</h3>${dialogue.lines.map(line=>`<p><strong>${escapeHtml(line.korean_text||"")}</strong><span>${escapeHtml(line.display_pronunciation||"")}</span></p>`).join("")}</article>`).join("")||emptyHtml("상황·주제·대화 연결이 없습니다.");
+      panels.scene.innerHTML=`<div class="panel-title"><h2>상황으로 이동</h2><small>주제·상황·대화로 더 멀리 탐색</small></div>`+data.categoryGroups.map(group=>groupHtml(group.label,uniqueRows(group.rows,focusRow.expression_id),group.type==="SITUATION"?"상황":"주제")).join("")+classified.sceneGroups.map(group=>groupHtml(group.label,group.rows,group.badge)).join("")+data.dialogues.map(dialogue=>`<article class="dialogue"><h3>${escapeHtml(dialogue.title)}</h3>${dialogue.lines.map(line=>`<p><strong>${escapeHtml(line.korean_text||"")}</strong><span>${escapeHtml(line.display_pronunciation||"")}</span></p>`).join("")}</article>`).join("")||emptyHtml("상황·주제·대화 연결이 없습니다.");
       panels.sound.innerHTML=`<div class="panel-title"><h2>발음으로 이동</h2><small>같은 뜻이 아닌 듣기 구분용 연결</small></div>`+classified.soundGroups.map(group=>groupHtml(group.label,group.rows,group.badge)).join("")||emptyHtml("발음이 비슷한 연결이 없습니다.");
       const sourceRows=mergeSources(initialSourceRows,data.focusSources);
       panels.source.innerHTML=`<div class="panel-title"><h2>원본 메모</h2><small>정규 데이터에서 빠진 내용까지 확인</small></div>`+(data.sourceAssociations.length?`<p class="source-group-note">같은 메모에서 추출된 표현 ${data.sourceAssociations.length}개는 학습 관계로 섞지 않고 원문 근거로만 구분합니다.</p>`:"")+sourceRows.map(source=>`<article class="source-item"><small>원문</small>${escapeHtml(source.source_excerpt)}</article>`).join("")||emptyHtml("검색어가 포함된 원본 메모가 없습니다.");
-      const totals={speak:classified.speakGroups.reduce((sum,group)=>sum+group.rows.length,0)+examples.length,meaning:classified.meaningGroups.reduce((sum,group)=>sum+group.rows.length,0)+hints.length,scene:classified.sceneGroups.reduce((sum,group)=>sum+group.rows.length,0)+data.categories.length+data.dialogues.length,sound:classified.soundGroups.reduce((sum,group)=>sum+group.rows.length,0),source:sourceRows.length};
+      const totals={speak:classified.speakGroups.reduce((sum,group)=>sum+group.rows.length,0)+examples.length,meaning:classified.meaningGroups.reduce((sum,group)=>sum+group.rows.length,0)+hints.length,scene:classified.sceneGroups.reduce((sum,group)=>sum+group.rows.length,0)+data.categoryGroups.reduce((sum,group)=>sum+group.rows.length,0)+data.dialogues.length,sound:classified.soundGroups.reduce((sum,group)=>sum+group.rows.length,0),source:sourceRows.length};
       for(const [key,value] of Object.entries(totals))counts[key].textContent=String(value);
       renderTrail();renderHistory();bindDynamicButtons();showTab(activeTab);
     }
@@ -234,7 +217,6 @@
     function bindDynamicButtons(){
       hub.querySelectorAll("[data-expression-id]").forEach(button=>button.addEventListener("click",()=>{const id=Number(button.dataset.expressionId),row=findKnownRow(id);if(row)focusExpression(row)}));
       hub.querySelectorAll("[data-history-index]").forEach(button=>button.addEventListener("click",()=>goHistory(Number(button.dataset.historyIndex))));
-      hub.querySelectorAll("[data-category-id]").forEach(button=>button.addEventListener("click",()=>loadCategory(button)));
     }
     function findKnownRow(id){if(focusRow?.expression_id===id)return focusRow;return knownRows.get(Number(id))||null}
 
@@ -242,12 +224,6 @@
       focusRow=null;focusData=null;focusHistory=[];activeTab="source";hub.hidden=false;welcome.hidden=true;backBtn.hidden=true;focusMeaning.textContent=`“${query}” 원본 검색`;focusPron.textContent="정규 표현으로 분리되지 않은 내용";focusJapanese.hidden=true;trail.innerHTML='<strong>원본 메모</strong>';historyList.innerHTML="";
       panels.speak.innerHTML=emptyHtml("정규 표현 검색 결과가 없습니다.");panels.meaning.innerHTML=emptyHtml("뜻 연결은 정규 표현으로 승격된 뒤 제공됩니다.");panels.scene.innerHTML=emptyHtml("상황 연결은 정규 표현으로 승격된 뒤 제공됩니다.");panels.sound.innerHTML=emptyHtml("발음 연결은 정규 표현으로 승격된 뒤 제공됩니다.");panels.source.innerHTML=`<div class="panel-title"><h2>원본 메모</h2><small>정규 데이터에서 빠진 내용</small></div>${sources.map(source=>`<article class="source-item"><small>원문</small>${escapeHtml(source.source_excerpt)}</article>`).join("")}`;
       counts.speak.textContent="0";counts.meaning.textContent="0";counts.scene.textContent="0";counts.sound.textContent="0";counts.source.textContent=String(sources.length);showTab("source");
-    }
-
-    async function loadCategory(button){
-      const categoryId=Number(button.dataset.categoryId),name=button.dataset.categoryName,target=document.getElementById("categoryMembers");if(!target)return;
-      hub.querySelectorAll("[data-category-id]").forEach(item=>item.classList.toggle("active",item===button));target.hidden=false;target.innerHTML='<div class="empty">불러오는 중…</div>';
-      try{const links=await apiGet(`expression_category?select=expression_id&category_id=eq.${categoryId}&order=id.asc&limit=80`),rows=await resolveExpressionRows(links.map(item=>item.expression_id)),usable=uniqueRows(rows,focusRow.expression_id).slice(0,30);target.innerHTML=usable.length?`<div class="group-head"><strong>${escapeHtml(name)}</strong><span>${usable.length}개</span></div>${usable.map(row=>rowHtml(row,"주제")).join("")}`:emptyHtml("다른 표현이 없습니다.");bindDynamicButtons()}catch(error){console.error(error);target.innerHTML=emptyHtml("카테고리를 불러오지 못했습니다.")}
     }
 
     async function focusExpression(row,{replace=false}={}){

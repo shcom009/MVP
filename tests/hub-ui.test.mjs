@@ -8,7 +8,7 @@ const current=readFileSync(new URL('../nihongo.html',import.meta.url),'utf8');
 test('기존 화면과 분리된 실제 데이터 탐색 허브를 제공한다',()=>{
   assert.match(html,/김토끼니혼고 · 탐색 허브/);
   assert.match(html,/search_expressions_expanded/);
-  assert.match(html,/get_learning_associations/);
+  assert.match(html,/get_expression_hub/);
   assert.match(html,/search_source_memos/);
   assert.match(html,/href="\.\/nihongo\.html"/);
 });
@@ -33,6 +33,12 @@ test('정규 표현이 없어도 원본 메모 결과를 직접 보여 준다',(
 test('카테고리에서 불러온 표현도 새 중심으로 이동할 수 있다',()=>{
   assert.match(html,/const knownRows=new Map\(\)/);
   assert.match(html,/knownRows\.set\(saved\.expression_id,saved\)/);
+});
+
+test('공개 화면은 원본 테이블을 직접 조회하지 않고 제한형 RPC만 사용한다',()=>{
+  assert.doesNotMatch(html,/function apiGet\(/);
+  assert.doesNotMatch(html,/rest\/v1\/expression\?/);
+  assert.match(html,/rpc\("get_expression_hub"/);
 });
 
 test('기존 화면 파일은 기존 기능을 유지한다',()=>{
