@@ -4,9 +4,11 @@ import { test } from 'node:test';
 
 const html=readFileSync(new URL('../nihongo-hub.html',import.meta.url),'utf8');
 const current=readFileSync(new URL('../nihongo.html',import.meta.url),'utf8');
+const alignedRpc=readFileSync(new URL('../supabase/pending/20260924_align_expression_hub_with_main_site.sql',import.meta.url),'utf8');
 
 test('기존 화면과 분리된 실제 데이터 탐색 허브를 제공한다',()=>{
   assert.match(html,/김토끼니혼고 · 탐색 허브/);
+  assert.match(html,/기존 화면과 같은 실제 데이터를 사용하는 연결 중심 화면/);
   assert.match(html,/search_expressions_expanded/);
   assert.match(html,/get_expression_hub/);
   assert.match(html,/search_source_memos/);
@@ -39,6 +41,12 @@ test('공개 화면은 원본 테이블을 직접 조회하지 않고 제한형 
   assert.doesNotMatch(html,/function apiGet\(/);
   assert.doesNotMatch(html,/rest\/v1\/expression\?/);
   assert.match(html,/rpc\("get_expression_hub"/);
+});
+
+test('두 실제 화면은 모든 ACTIVE 표현을 같은 범위로 사용한다',()=>{
+  assert.match(alignedRpc,/e\.status = 'ACTIVE'/);
+  assert.doesNotMatch(alignedRpc,/edge_flag/);
+  assert.match(alignedRpc,/not coalesce\(d\.story_only, false\)/);
 });
 
 test('기존 화면 파일은 기존 기능을 유지한다',()=>{
