@@ -65,6 +65,14 @@ test('검색 결과 위에서 전체 데이터의 연관 그룹을 팝오버로 
   assert.match(script, /openDetail\(target\)/);
 });
 
+test('정규 표현에서 빠진 원문도 검색 결과에 함께 표시한다', () => {
+  assert.match(script, /rpc\("search_expressions_expanded",\{p_query:q,p_limit:50\}\)/);
+  assert.match(script, /rpc\("search_source_memos",\{p_query:q,p_limit:8\}\)/);
+  assert.match(html, /원본 메모에서 찾은 내용/);
+  assert.match(html, /class=\"source-result\"/);
+  assert.match(script, /currentSourceRows=sourceRows/);
+});
+
 test('모바일 카테고리는 한 줄 칩을 유지하고 연관 팝오버를 즉시 닫을 수 있다', () => {
   assert.match(html, /\.category-strip \.category-chip\{[^}]*white-space:nowrap/);
   assert.match(html, /@media\(max-width:430px\)\{\.category-layout,\.category-layout:has\(\.category-strip\.expanded\)\{grid-template-columns:minmax\(0,1fr\) 88px/);
@@ -111,7 +119,7 @@ test('상단 로고와 문구를 누르면 진행 중 검색을 무효화하고 
   assert.match(html, /<button id="homeBtn" class="brand-title" type="button" aria-label="김토끼니혼고 메인화면으로 이동">/);
   assert.match(script, /homeBtn\.addEventListener\("click",goHome\)/);
   const source=script.split('\n').find(line=>line.trimStart().startsWith('function goHome('));
-  const context={listRequestId:7,input:{value:'카에루'},activeCategoryId:2,currentKashiMatch:[1],currentRows:[1],currentVisibleCount:1,listExtras:new Map([[1,{}]]),resultsBox:{innerHTML:'search results'},window:{scrollTo(options){this.options=options}},matchMedia(){return {matches:false}},dismissQuickPopover(){},dismissRelationPopover(){},markCategory(){},updateCategoryArt(){},setStatus(){},setLoading(){}};
+  const context={listRequestId:7,input:{value:'카에루'},activeCategoryId:2,currentKashiMatch:[1],currentRows:[1],currentSourceRows:[1],currentVisibleCount:1,listExtras:new Map([[1,{}]]),resultsBox:{innerHTML:'search results'},window:{scrollTo(options){this.options=options}},matchMedia(){return {matches:false}},dismissQuickPopover(){},dismissRelationPopover(){},markCategory(){},updateCategoryArt(){},setStatus(){},setLoading(){}};
   vm.runInNewContext(`${source};this.goHome=goHome`,context);
   context.goHome();
   assert.equal(context.listRequestId,8);
