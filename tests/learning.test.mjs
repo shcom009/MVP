@@ -48,9 +48,10 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
 });
 
-test('검색 결과를 행형 데이터 그리드로 표시하고 연관 그룹을 바로 탐색한다', () => {
-  assert.match(html, /\.result-grid-head,\.result\{display:grid;grid-template-columns:minmax\(150px,34%\) minmax\(0,1fr\)\}/);
-  assert.match(html, /\.result-summary\{[^}]*border-left:1px solid #eadfe0/);
+test('검색 결과를 허브와 같은 평면 행 목록으로 표시하고 연관 그룹을 바로 탐색한다', () => {
+  assert.match(html, /\.result\{display:grid;grid-template-columns:minmax\(220px,1fr\) minmax\(0,56%\);align-items:center/);
+  assert.match(html, /\.result\{[^}]*border:0;border-bottom:1px solid #eadfe0;background:transparent/);
+  assert.match(html, /\.result-summary\{[^}]*justify-content:flex-end[^}]*border:0/);
   assert.match(html, /\.result-main::after\{display:none;content:none\}/);
   assert.match(script, /ids\.map\(id=>rpc\("get_learning_associations",\{p_expression_ids:\[id\],p_limit_per_group:32\}\)/);
   assert.match(script, /loadListExtras\(rows\.slice\(0,INITIAL_SEARCH_RESULTS\),requestId\)/);
@@ -60,7 +61,7 @@ test('검색 결과를 행형 데이터 그리드로 표시하고 연관 그룹�
   const painter=script.split('\n').find(line=>line.trimStart().startsWith('function paintResults('));
   assert.ok(painter);
   assert.doesNotMatch(painter, /review-toggle|favorite-toggle|primary-context/);
-  assert.match(painter, /class="result-grid-head"/);
+  assert.doesNotMatch(painter, /result-grid-head|<span>표현<\/span>|<span>연결<\/span>/);
   assert.match(painter, /<div class="result-main">/);
   assert.doesNotMatch(painter, /<button class="result-main"/);
   const resultClick=script.split('\n').find(line=>line.includes('resultsBox.addEventListener("click"'));
@@ -302,7 +303,7 @@ test('화면에 즐겨찾기 버튼과 메뉴가 존재한다', () => {
 });
 
 test('검색 그리드에서는 등록 버튼을 제거하고 상세 화면의 기존 학습 기능은 보존한다', () => {
-  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)') && line.includes('.result-grid-head,.result{grid-template-columns'));
+  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)') && line.includes('.result{grid-template-columns:minmax(118px,42%)'));
   assert.ok(html.includes('width:44px;height:44px'), '44px buttons');
   assert.ok(html.includes('.review-toggle::before{content:"+"'), 'unselected review icon');
   assert.ok(html.includes('.review-toggle.active::before{content:"✓"'), 'selected review icon');
