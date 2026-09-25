@@ -52,7 +52,7 @@ test('검색 결과를 행형 데이터 그리드로 표시하고 연관 그룹�
   assert.match(html, /\.result-grid-head,\.result\{display:grid;grid-template-columns:minmax\(150px,34%\) minmax\(0,1fr\)\}/);
   assert.match(html, /\.result-summary\{[^}]*border-left:1px solid #eadfe0/);
   assert.match(html, /\.result-main::after\{display:none;content:none\}/);
-  assert.match(script, /rpc\("get_learning_associations",\{p_expression_ids:ids,p_limit_per_group:32\}\)/);
+  assert.match(script, /ids\.map\(id=>rpc\("get_learning_associations",\{p_expression_ids:\[id\],p_limit_per_group:32\}\)/);
   assert.match(script, /loadListExtras\(rows\.slice\(0,INITIAL_SEARCH_RESULTS\),requestId\)/);
   assert.match(script, /loadListExtras\(currentRows\.slice\(i,i\+LIST_EXTRAS_BATCH\),requestId,false\)/);
   assert.match(script, /chipHtml\("association",key,group\.label,group\.rows\.length\)/);
