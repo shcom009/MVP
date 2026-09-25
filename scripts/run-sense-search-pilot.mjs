@@ -34,6 +34,23 @@ async function search(query) {
   }
 }
 
+async function associations(expressionIds) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const response = await fetch(`${URL}/rest/v1/rpc/get_learning_associations`, {
+      method: 'POST',
+      headers: { apikey: KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_expression_ids: expressionIds, p_limit_per_group: 24 }),
+      signal: controller.signal
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 const results = await Promise.all(cases.map(async definition => ({ definition, rows: await search(definition.query) })));
 let failed = 0;
 for (const { definition, rows } of results) {
@@ -52,5 +69,24 @@ for (const { definition, rows } of results) {
   if (failures.length) failed += 1;
   console.log(`${failures.length ? 'FAIL' : 'PASS'} ${definition.query}${failures.length ? ` · ${failures.join(' · ')}` : ` · ${rows.length}개 뜻`}`);
 }
-console.log(`SUMMARY ${cases.length - failed}/${cases.length} passed`);
+
+const associationCases = [
+  { expressionId: 7030, forbidden: ['오스·밀다'] },
+  { expressionId: 1580, forbidden: ['하나시 야스이·말하기 편해'] },
+  { expressionId: 1582, forbidden: ['하나시 야스이·말하기 편해'] },
+  { expressionId: 1583, forbidden: ['하나시 야스이·말하기 편해'] },
+  { expressionId: 1584, forbidden: ['하나시 야스이·말하기 편해'] },
+  { expressionId: 6159, forbidden: ['이쿠시카 나이·가야지', '요리 음식 맛표현'] }
+];
+const associationRows = await associations(associationCases.map(item => item.expressionId));
+for (const definition of associationCases) {
+  const labels = new Set(associationRows
+    .filter(row => Number(row.anchor_expression_id) === definition.expressionId)
+    .map(row => row.group_label));
+  const exposed = definition.forbidden.filter(label => labels.has(label));
+  if (exposed.length) failed += 1;
+  console.log(`${exposed.length ? 'FAIL' : 'PASS'} 연결 ${definition.expressionId}${exposed.length ? ` · 노출 ${exposed.join(', ')}` : ' · 혼합 그룹 제외'}`);
+}
+
+console.log(`SUMMARY ${cases.length + associationCases.length - failed}/${cases.length + associationCases.length} passed`);
 if (failed) process.exitCode = 1;
