@@ -60,12 +60,22 @@ export function validateCase(definition, results, associations, forbiddenLabels 
     for (const member of expected.requiredMembers) if (!rows.some(row => matchesExpected(row, member))) failures.push(`${expected.label}: 필수 구성원 ${member.meaning ?? ''} · ${member.pronunciation ?? ''}가 없습니다.`);
     const memberKeys = rows.map(row => `${normalize(row.display_pronunciation)}|${normalize(row.meaning_text)}`);
     if (new Set(memberKeys).size !== memberKeys.length) failures.push(`${expected.label}: 같은 발음과 뜻의 구성원이 중복되었습니다.`);
+    const hasExplicitOrder = rows.every(row => Number.isFinite(Number(row.display_order)));
     for (let index = 1; index < rows.length; index += 1) {
       const previous = rows[index - 1];
       const current = rows[index];
-      if (Number(previous.association_level) === Number(current.association_level)
-          && normalize(previous.display_pronunciation).length > normalize(current.display_pronunciation).length) {
-        failures.push(`${expected.label}: 긴 표현이 짧은 표현보다 먼저 나옵니다.`);
+      const previousLevel = Number(previous.association_level);
+      const currentLevel = Number(current.association_level);
+      const previousOrder = Number(previous.display_order);
+      const currentOrder = Number(current.display_order);
+      if (!hasExplicitOrder
+          && Number.isFinite(previousLevel) && Number.isFinite(currentLevel)
+          && previousLevel > currentLevel) {
+        failures.push(`${expected.label}: 연관 단계 우선순위가 뒤바뀌었습니다.`);
+        break;
+      }
+      if (hasExplicitOrder && previousOrder > currentOrder) {
+        failures.push(`${expected.label}: 명시된 표시 순서가 뒤바뀌었습니다.`);
         break;
       }
     }
