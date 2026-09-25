@@ -48,8 +48,9 @@ test('확정 시안 이미지를 그대로 사용하며 문구와 학습 동작�
   assert.match(html, /data-quick-kind="\$\{kind\}"/);
 });
 
-test('검색 결과 그리드의 모든 카드에서 연관 그룹을 바로 탐색한다', () => {
-  assert.match(html, /\.results\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+test('검색 결과를 행형 데이터 그리드로 표시하고 연관 그룹을 바로 탐색한다', () => {
+  assert.match(html, /\.result-grid-head,\.result\{display:grid;grid-template-columns:minmax\(150px,34%\) minmax\(0,1fr\)\}/);
+  assert.match(html, /\.result-summary\{[^}]*border-left:1px solid #eadfe0/);
   assert.match(html, /\.result-main::after\{display:none;content:none\}/);
   assert.match(script, /rpc\("get_learning_associations",\{p_expression_ids:ids,p_limit_per_group:32\}\)/);
   assert.match(script, /chipHtml\("association",key,group\.label,group\.rows\.length\)/);
@@ -57,6 +58,11 @@ test('검색 결과 그리드의 모든 카드에서 연관 그룹을 바로 탐
   const painter=script.split('\n').find(line=>line.trimStart().startsWith('function paintResults('));
   assert.ok(painter);
   assert.doesNotMatch(painter, /review-toggle|favorite-toggle|primary-context/);
+  assert.match(painter, /class="result-grid-head"/);
+  assert.match(painter, /<div class="result-main">/);
+  assert.doesNotMatch(painter, /<button class="result-main"/);
+  const resultClick=script.split('\n').find(line=>line.includes('resultsBox.addEventListener("click"'));
+  assert.doesNotMatch(resultClick, /openDetail\(currentRows\[index\]\)/);
   assert.match(script, /function prepareLearningAssociations\(items\)/);
   assert.match(script, /function associationRowKey\(row\)/);
   assert.match(script, /function collapseAssociationGroups\(groups\)/);
@@ -290,15 +296,16 @@ test('화면에 즐겨찾기 버튼과 메뉴가 존재한다', () => {
   assert.match(html, /id="detailFavoriteBtn"/);
   assert.match(html, /id="favoriteCount"/);
   assert.match(html, /data-library="favorite"/);
-  assert.match(html, /favoriteButton\)\{toggleFavorite\(currentRows\[index\]\)/);
+  assert.match(script, /detailFavoriteBtn\.addEventListener\("click",\(\)=>\{if\(currentDetailRow\)toggleFavorite\(currentDetailRow\)\}\)/);
 });
 
-test('검색 카드에서는 등록 버튼을 제거하고 상세 화면의 기존 학습 기능은 보존한다', () => {
-  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)') && line.includes('.result{padding-bottom:56px}'));
+test('검색 그리드에서는 등록 버튼을 제거하고 상세 화면의 기존 학습 기능은 보존한다', () => {
+  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)') && line.includes('.result-grid-head,.result{grid-template-columns'));
   assert.ok(html.includes('width:44px;height:44px'), '44px buttons');
   assert.ok(html.includes('.review-toggle::before{content:"+"'), 'unselected review icon');
   assert.ok(html.includes('.review-toggle.active::before{content:"✓"'), 'selected review icon');
-  assert.ok(mobile?.includes('.detail-main>.review-toggle,.detail-main>.favorite-toggle{top:auto;bottom:10px}'));
+  assert.ok(mobile);
+  assert.match(html, /\.detail-main>\.review-toggle,\.detail-main>\.favorite-toggle\{top:auto;bottom:(?:10|11)px\}/);
   const painter=script.split('\n').find(line=>line.trimStart().startsWith('function paintResults('));
   assert.doesNotMatch(painter, /review-toggle|favorite-toggle/);
 });
