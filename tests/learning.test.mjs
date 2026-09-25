@@ -303,7 +303,9 @@ test('화면에 즐겨찾기 버튼과 메뉴가 존재한다', () => {
 });
 
 test('검색 그리드에서는 등록 버튼을 제거하고 상세 화면의 기존 학습 기능은 보존한다', () => {
-  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)') && line.includes('.result{grid-template-columns:minmax(118px,42%)'));
+  const mobile = html.split('\n').find(line => line.includes('@media(max-width:430px)') && line.includes('.result{grid-template-columns:1fr;padding-bottom:0}'));
+  assert.ok(mobile?.includes('.result-main{min-height:0'));
+  assert.ok(mobile?.includes('.result-summary{justify-content:flex-start'));
   assert.ok(html.includes('width:44px;height:44px'), '44px buttons');
   assert.ok(html.includes('.review-toggle::before{content:"+"'), 'unselected review icon');
   assert.ok(html.includes('.review-toggle.active::before{content:"✓"'), 'selected review icon');
