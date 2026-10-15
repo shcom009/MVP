@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f7f7f5"><title>김토끼니혼고 앱 설치</title><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icons/kimtokki-rabbit-v2-192.png">
+<script>
+let installPrompt=null;
+window.addEventListener("beforeinstallprompt",event=>{
+ event.preventDefault();installPrompt=event;
+ if(document.readyState!=="loading")renderInstall();
+});
+window.addEventListener("appinstalled",()=>{installPrompt=null;document.getElementById("install").hidden=true;document.getElementById("status").textContent="설치 완료 신호를 받았습니다. 홈 화면의 김토끼니혼고 아이콘으로 열어 주세요.";});
+</script>
+<style>body{margin:0;background:#fff8f7;color:#382e32;font:17px/1.65 system-ui,sans-serif}main{max-width:560px;margin:30px auto;padding:24px}img{width:96px;height:96px;border-radius:24px}h1{font-size:26px}button,a{font:inherit}button{padding:13px 20px;border:0;border-radius:14px;background:#cf7897;color:white;cursor:pointer}button[hidden]{display:none}a{color:#824461}textarea{box-sizing:border-box;width:100%;min-height:240px;font:13px/1.5 monospace;background:white;border:1px solid #e5cdd6;border-radius:12px;padding:12px}details{margin-top:28px}#status{padding:18px;background:white;border-radius:16px}</style></head>
+<body><main><img src="./icons/kimtokki-rabbit-v2-192.png" alt=""><h1>김토끼니혼고 앱 설치</h1><p id="status" role="status">이 브라우저에서 설치할 수 있는지 확인 중입니다.</p><button id="install" type="button" hidden>앱 설치</button><p><a href="./nihongo.html">김토끼니혼고로 이동</a></p><p>설치 버튼이 나타나지 않으면 아래 점검 결과를 펼쳐 화면을 보내 주세요. 기존 앱이나 브라우저 데이터를 삭제할 필요는 없습니다.</p><details><summary>점검 결과</summary><textarea id="report" readonly aria-label="점검 결과"></textarea></details></main>
+<script>
+const report=document.getElementById("report");
+const state={browser:navigator.userAgent,secureContext:window.isSecureContext,standalone:matchMedia("(display-mode: standalone)").matches,installSignal:false,manifest:"확인 중",worker:"확인 중",controller:"확인 중"};
+function refresh(){state.installSignal=!!installPrompt;state.controller=navigator.serviceWorker?.controller?.scriptURL||"현재 페이지 제어 없음";report.value=JSON.stringify(state,null,2);}
+function renderInstall(){if(state.standalone){document.getElementById("status").textContent="현재 주소창 없는 앱 화면으로 실행 중입니다.";return;}if(installPrompt){document.getElementById("install").hidden=false;document.getElementById("status").textContent="설치할 수 있습니다. 아래 앱 설치 버튼을 눌러 주세요.";}refresh();}
+document.getElementById("install").addEventListener("click",async()=>{const pending=installPrompt;if(!pending)return;installPrompt=null;document.getElementById("install").hidden=true;try{await pending.prompt();const result=await pending.userChoice;state.installChoice=result.outcome;document.getElementById("status").textContent=result.outcome==="accepted"?"설치를 요청했습니다. 완료되면 홈 화면의 앱 아이콘으로 열어 주세요.":"설치창을 닫았습니다. 다시 시도하려면 이 페이지를 새로고침해 주세요.";}catch(error){state.installError=String(error);document.getElementById("status").textContent="설치창을 열지 못했습니다. 점검 결과를 보내 주세요.";}refresh();});
+async function check(){try{const response=await fetch("./manifest.webmanifest",{cache:"no-store"});if(!response.ok)throw Error("HTTP "+response.status);const manifest=await response.json();state.manifest={display:manifest.display,start_url:manifest.start_url,scope:manifest.scope};}catch(error){state.manifest=String(error);}refresh();if(!("serviceWorker" in navigator)){state.worker="지원 안 함";refresh();return;}try{const registration=await navigator.serviceWorker.register("./sw.js");state.worker={scope:registration.scope,active:registration.active?.state||null,installing:registration.installing?.state||null,waiting:registration.waiting?.state||null};for(const worker of [registration.active,registration.installing,registration.waiting])if(worker)worker.addEventListener("statechange",()=>{state.worker={scope:registration.scope,active:registration.active?.state||null,installing:registration.installing?.state||null,observed:worker.state};refresh();});}catch(error){state.worker=String(error);}refresh();}
+navigator.serviceWorker?.addEventListener("controllerchange",refresh);
+renderInstall();check();
+setTimeout(()=>{if(!installPrompt&&!state.standalone){document.getElementById("status").textContent="현재까지 브라우저의 설치 가능 신호를 받지 못했습니다. 원인은 아직 확정할 수 없습니다. 아래 점검 결과를 보내 주세요.";}refresh();},15000);
+</script></body></html>
