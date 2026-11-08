@@ -337,12 +337,13 @@ test('모바일 안전영역·동적 화면 높이·팝오버 재배치를 적�
   assert.equal(popover.style.top, '304px');
 });
 
-test('Story 탭은 주제별·카시·엣지·기타 순서이고 엣지는 19금 안내 뒤 열린다', () => {
+test('Story 탭은 학습노트·주제별·카시·엣지·기타 순서이고 엣지는 19금 안내 뒤 열린다', () => {
   const tabs = html.match(/<div id="storyTabs" class="story-tabs">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(tabs);
   const buttons = [...tabs.matchAll(/<button class="story-tab( active)?"[^>]*data-story-group="([^"]+)">([^<]+)<\/button>/g)]
     .map(([, active, group, label]) => ({ active: Boolean(active), group, label }));
   assert.deepEqual(buttons, [
+    { active: false, group: 'notes', label: '학습노트' },
     { active: true, group: 'dialogue', label: '주제별' },
     { active: false, group: 'kashi', label: '카시' },
     { active: false, group: 'edge', label: '엣지' },
@@ -416,9 +417,9 @@ test('Story를 읽고 돌아오면 목록 위치를 복원하고 새 목록에�
   } };
   const context = vm.createContext({
     storyBackBtn: { hidden: true, focus() {} },
-    storyHeading: { textContent: '' }, storyTabs: { hidden: false },
+    storyHeading: { textContent: '' }, storyTabs: { hidden: false }, noteSearchForm: { hidden: true },
     storyReader: { hidden: true, textContent: '' }, storyList,
-    storySheet, storyLoaded: true, paintStories() {},
+    storySheet, storyLoaded: true, storyGroup: 'dialogue', paintStories() {},
     stories: [{ id: 1, title: '(주제-친구관계)', story_text: '짧은 본문' }]
   });
   vm.runInContext(`let storyListScrollTop=0,storyHistoryActive=false;\n${source}`, context);
@@ -456,9 +457,9 @@ test('기기 뒤로가기는 Story 본문→목록→닫기 순서로 이동하�
   context = vm.createContext({
     history, storyBackdrop, storySheet, storyList, edgeWarning: { hidden: true },
     storyReader: { hidden: true, textContent: '' }, storyBackBtn: { hidden: true, focus() {} },
-    storyHeading: { textContent: '' }, storyTabs: { hidden: false }, storyCloseBtn: { focus() {} },
+    storyHeading: { textContent: '' }, storyTabs: { hidden: false }, noteSearchForm: { hidden: true }, storyCloseBtn: { focus() {} },
     storyLoaded: true, paintStories() {}, dismissQuickPopover() {}, app: { inert: false },
-    document: { activeElement: null, body: { style: {} } },
+    document: { activeElement: null, body: { style: {} } }, sheetBackdrop: { hidden: true }, storyGroup: 'dialogue',
     stories: [{ id: 1, title: '(주제-친구관계)', story_text: '짧은 본문' }]
   });
   vm.runInContext(`let storyListScrollTop=0,storyHistoryActive=false,storyTrigger=null,storyHistoryToken=null;\n${source}`, context);

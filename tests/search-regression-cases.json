@@ -12,7 +12,7 @@
       "maxResults": 3,
       "top": {"meaning": "고모 이모 아줌마", "pronunciation": "오바상", "matchType": "PRON_EXACT"},
       "associations": [
-        {"anchor": {"meaning": "고모 이모 아줌마", "pronunciation": "오바상"}, "label": "호칭", "requiredMembers": [{"pronunciation": "오지상"}, {"pronunciation": "오바-상"}]}
+        {"anchor": {"meaning": "고모 이모 아줌마", "pronunciation": "오바상"}, "label": "호칭", "requiredMembers": [{"pronunciation": "오지상"}, {"pronunciation": "오바아상"}]}
       ]
     },
     {
