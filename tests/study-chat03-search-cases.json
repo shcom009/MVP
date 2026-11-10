@@ -1,0 +1,17 @@
+{
+  "cases": [
+    {"type":"정확 발음","query":"모리아와세","pronunciation":"모리아와세","noteTitle":"모리아와세","maxNotes":4},
+    {"type":"잘못 들은 발음","query":"데카이스루","pronunciation":"텟카이 스루","noteTitle":"취소와 철회","maxNotes":3},
+    {"type":"잘못 들은 장음","query":"쿄오다이 세에부츠","pronunciation":"쿄다이 세에부츠","noteTitle":"쿄다이 세에부츠","maxNotes":3},
+    {"type":"띄어쓰기 없음","query":"야라나캬이케나이","pronunciation":"야라나캬 이케나이","noteTitle":"야라나캬 이케나이","maxNotes":3},
+    {"type":"문장 일부","query":"오와라세","pronunciation":"오와라세루","noteTitle":"삿사토 오와라세로","maxNotes":3,"maxRank":6},
+    {"type":"한국어 뜻","query":"할 말을 잃었다","pronunciation":"코토바오 우시낫타","noteTitle":"할 말을 잃었다","maxNotes":3},
+    {"type":"유의어·표기","query":"모듬","pronunciation":"모리아와세","noteTitle":"모리아와세","maxNotes":4},
+    {"type":"본문 단어","query":"빨대로","noteTitle":"나메루","maxNotes":3},
+    {"type":"연결 표현 별칭","query":"우습게 보다","pronunciation":"나메루","noteTitle":"나메루","maxNotes":4},
+    {"type":"공백·쉼표·문장부호","query":"하나시가,치가우다로오!","pronunciation":"하나시가 치가우다로오","noteTitle":"해결 요청과 항의","maxNotes":3},
+    {"type":"장음 생략","query":"쿄다이 세부츠","pronunciation":"쿄다이 세에부츠","noteTitle":"쿄다이 세에부츠","maxNotes":3},
+    {"type":"다의어","query":"이루 필요하다","pronunciation":"이루","noteTitle":"이루: 있다와 필요하다","maxNotes":3},
+    {"type":"의미·활용","query":"깜짝놀랐어","pronunciation":"빗쿠리시타","noteTitle":"빗쿠리","maxNotes":4}
+  ]
+}

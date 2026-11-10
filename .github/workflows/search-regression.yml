@@ -9,6 +9,10 @@ on:
       - 'scripts/run-search-regression.mjs'
       - 'tests/search-regression-cases.json'
       - 'tests/search-regression.test.mjs'
+      - 'scripts/run-study-chat03-validation.mjs'
+      - 'tests/study-chat03*'
+      - 'learning-note-utils.js'
+      - '.github/workflows/search-regression.yml'
 
 permissions:
   contents: read
@@ -22,5 +26,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/search-regression.test.mjs
+      - run: node --test
       - run: node scripts/run-search-regression.mjs
+      - run: node scripts/run-study-chat03-validation.mjs
